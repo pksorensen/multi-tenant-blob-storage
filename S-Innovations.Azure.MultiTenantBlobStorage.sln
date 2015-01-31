@@ -5,6 +5,13 @@ VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiTenantBlobStorage", "src\MultiTenantBlobStorage\MultiTenantBlobStorage.csproj", "{D1B57191-DB36-4254-BA73-53AACC0C430C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{0FC85FC6-6E8F-48F6-AE89-6ECC6B555C7B}"
+	ProjectSection(SolutionItems) = preProject
+		build\NuGet.Config = build\NuGet.Config
+		build\NuGet.exe = build\NuGet.exe
+		build\NuGet.targets = build\NuGet.targets
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
