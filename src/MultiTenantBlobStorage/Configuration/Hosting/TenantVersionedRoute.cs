@@ -24,7 +24,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
             get;
             private set;
         }
-
+      
         public override IDictionary<string, object> Constraints
         {
             get

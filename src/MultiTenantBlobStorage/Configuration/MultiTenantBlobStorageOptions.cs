@@ -1,9 +1,11 @@
 ﻿using SInnovations.Azure.MultiTenantBlobStorage.Logging;
+using SInnovations.Azure.MultiTenantBlobStorage.Notifications;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
 {
@@ -13,8 +15,12 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
 
         public MultiTenantBlobStorageOptions()
         {
-            ContainerResourceName = "Container";
+            //ContainerResourceName = "Container";
+            LoggingOptions = new LoggingOptions();
+            Notifications = new AzureMultiTenantStorageNotifications();
         }
+
+        public AzureMultiTenantStorageNotifications Notifications { get; set; }
 
         /// <summary>
         /// In all endpoints the container resource can be replaced with a custom one.
@@ -31,5 +37,9 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
         /// </value>
         public LoggingOptions LoggingOptions { get; set; }
 
+
+        public string AuthenticationType { get; set; }
+
+        public Func<XElement,bool> BlobListFilter { get; set; }
     }
 }

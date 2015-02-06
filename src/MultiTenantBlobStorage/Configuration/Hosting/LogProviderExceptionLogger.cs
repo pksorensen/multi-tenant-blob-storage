@@ -16,9 +16,9 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
         {
             Logger.ErrorException("Unhandled exception", context.Exception);
 
-            var env = context.Request.GetOwinEnvironment();
-            var events = env.ResolveDependency<IEventService>();
-            events.RaiseUnhandledExceptionEvent(context.Exception);
+            //var env = context.Request.GetOwinEnvironment();
+            //var events = env.ResolveDependency<IEventService>();
+            //events.RaiseUnhandledExceptionEvent(context.Exception);
 
             return Task.FromResult<object>(null);
         }

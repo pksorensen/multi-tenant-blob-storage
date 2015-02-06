@@ -8,6 +8,7 @@ using System.Net.Http.Formatting;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Http;
+using System.Web.Http.Dispatcher;
 using System.Web.Http.ExceptionHandling;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
@@ -29,9 +30,9 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
             jsonFormatter.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
             //optional: set serializer settings here
             config.Services.Replace(typeof(IContentNegotiator), new JsonContentNegotiator(jsonFormatter));
+            config.Services.Replace(typeof(IHttpControllerTypeResolver), new EndpointHttpControllerTypeResolver());
 
-
-            config.IncludeErrorDetailPolicy = IncludeErrorDetailPolicy.LocalOnly;
+            config.IncludeErrorDetailPolicy = IncludeErrorDetailPolicy.Always;
 
             if (options.LoggingOptions.EnableWebApiDiagnostics)
             {

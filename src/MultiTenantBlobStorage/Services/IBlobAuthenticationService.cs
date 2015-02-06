@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 {
-    public interface ITenantContainerNameService
+    public interface IBlobAuthenticationService
     {
        
+      
 
-        Task<string> GetContainerNameAsync(TenantRoute tenantRoute);
+        Task SignRequestAsync(HttpWebRequest request, TenantRoute tenantRoute);
     }
 }

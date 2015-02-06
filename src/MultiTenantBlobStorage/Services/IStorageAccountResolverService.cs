@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 {
-    public interface ITenantContainerNameService
+    public interface IStorageAccountResolverService
     {
        
 
-        Task<string> GetContainerNameAsync(TenantRoute tenantRoute);
+        Task<string> GetBlobEndpointAsync(TenantRoute tenantRoute);
     }
 }
