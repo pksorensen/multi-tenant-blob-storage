@@ -9,6 +9,15 @@ using System.Xml.Linq;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
 {
+    public class ListBlobOptions
+    {
+        /// <summary>
+        /// Function is invoked on all blobs returned 
+        /// </summary>
+        public Func<XElement, bool> BlobListFilter { get; set; }
+
+       // public 
+    }
     public class MultiTenantBlobStorageOptions
     {
         static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
@@ -18,6 +27,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
             //ContainerResourceName = "Container";
             LoggingOptions = new LoggingOptions();
             Notifications = new AzureMultiTenantStorageNotifications();
+            ListBlobOptions = new ListBlobOptions();
         }
 
         public AzureMultiTenantStorageNotifications Notifications { get; set; }
@@ -40,6 +50,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
 
         public string AuthenticationType { get; set; }
 
-        public Func<XElement,bool> BlobListFilter { get; set; }
+        public ListBlobOptions ListBlobOptions { get; set; }
+
+       
     }
 }
