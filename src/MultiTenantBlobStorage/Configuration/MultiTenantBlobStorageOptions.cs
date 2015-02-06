@@ -16,6 +16,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
         /// </summary>
         public Func<XElement, bool> BlobListFilter { get; set; }
 
+        
+
        // public 
     }
     public class MultiTenantBlobStorageOptions
