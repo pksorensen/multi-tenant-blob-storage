@@ -140,11 +140,11 @@ namespace Owin
                
                 if (name != null)
                 {
-                    container.RegisterType(registration.DependencyType, registration.Type, name, new HierarchicalLifetimeManager(),new InjectionFactory((c) => registration.Factory(new UnityDependencyResolver(c))));
+                    container.RegisterType(registration.DependencyType,name, new HierarchicalLifetimeManager(),new InjectionFactory((c) => registration.Factory(new UnityDependencyResolver(c))));
                 }
                 else
                 {
-                    container.RegisterType(registration.DependencyType, registration.Type, new HierarchicalLifetimeManager(), new InjectionFactory((c) => registration.Factory(new UnityDependencyResolver(c))));
+                    container.RegisterType(registration.DependencyType, new HierarchicalLifetimeManager(), new InjectionFactory((c) => registration.Factory(new UnityDependencyResolver(c))));
                 }
             }
             else
