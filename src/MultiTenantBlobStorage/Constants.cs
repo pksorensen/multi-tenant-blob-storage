@@ -11,10 +11,17 @@ namespace SInnovations.Azure.MultiTenantBlobStorage
         public static class Actions
         {
             public const string ContainerPrefix = "container";
-            public const string ContainerList = ContainerPrefix+"_lists";
-            public const string ContainerExists = ContainerPrefix + "_exists";
-            public const string ContainerCreate = ContainerPrefix + "_create";
+            public const string ListBlobs   = ContainerPrefix+"_get";
+            public const string ContainerExists = ContainerPrefix + "_head";
+            public const string ContainerCreate = ContainerPrefix + "_put";
             public const string ContainerDelete = ContainerPrefix + "_delete";
+            public const string BlobPrefix = "blob";
+            public const string BlobPut = BlobPrefix + "_put";
+        }
+        public static class ContentTypes
+        {
+            public const string Xml = "application/xml";
+            public const string Json = "application/json";
         }
         public static class HeaderConstants
         {
@@ -32,7 +39,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage
             public const string Accept = "accept";
             public const string Connection = "connection";
             public const string ContentLenght = "content-length";
-            public const string ContentType = "content-Type";
+            public const string ContentType = "content-type";
             public const string Date = "date";
             public const string Expect = "expect";
             public const string Host = "host";

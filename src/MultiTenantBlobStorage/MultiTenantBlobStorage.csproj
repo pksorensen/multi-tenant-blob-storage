@@ -92,6 +92,8 @@
     <Compile Include="Configuration\AppBuilderExtensions\ConfigureRequestIdExtension.cs" />
     <Compile Include="Configuration\AppBuilderExtensions\UnityExtensions.cs" />
     <Compile Include="Configuration\AppBuilderExtensions\UseMultiTenantBlobStorageExtensions.cs" />
+    <Compile Include="Configuration\Hosting\ListBlobsRequestOptions.cs" />
+    <Compile Include="Configuration\Hosting\RequestOptions.cs" />
     <Compile Include="Configuration\Hosting\RequireSslMiddleware.cs" />
     <Compile Include="Configuration\Hosting\StorageMirrowMiddleware.cs" />
     <Compile Include="Configuration\Hosting\UnityContainerMiddleware.cs" />
@@ -114,6 +116,7 @@
     <Compile Include="Notifications\AzureMultiTenantStorageNotifications.cs" />
     <Compile Include="Notifications\BaseNotification.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\DefaultRequestHandlerService.cs" />
     <Compile Include="Services\Default\DefaultBlobAuthenticationService.cs" />
     <Compile Include="Services\Default\DefaultRequestTenantResolver.cs" />
     <Compile Include="Services\Default\DefaultResourceAuthorizationManager.cs" />
@@ -121,9 +124,13 @@
     <Compile Include="Services\Default\DefaultTenantContainerNameService.cs" />
     <Compile Include="Services\IBlobAuthenticationService.cs" />
     <Compile Include="Services\IEventService.cs" />
+    <Compile Include="Services\IRequestHandlerService.cs" />
     <Compile Include="Services\IRequestTenantResolver.cs" />
     <Compile Include="Services\IStorageAccountResolverService.cs" />
     <Compile Include="Services\ITenantContainerNameService.cs" />
+    <Compile Include="Services\RequestHandlers\Default\DefaultListBlobsHandler.cs" />
+    <Compile Include="Services\RequestHandlers\IListBlobsHandler.cs" />
+    <Compile Include="Services\RequestHandlers\IRequestHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

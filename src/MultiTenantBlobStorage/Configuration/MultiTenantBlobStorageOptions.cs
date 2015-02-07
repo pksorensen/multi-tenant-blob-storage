@@ -1,4 +1,5 @@
-﻿using SInnovations.Azure.MultiTenantBlobStorage.Logging;
+﻿using Microsoft.WindowsAzure.Storage.Blob;
+using SInnovations.Azure.MultiTenantBlobStorage.Logging;
 using SInnovations.Azure.MultiTenantBlobStorage.Notifications;
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,12 @@ using System.Xml.Linq;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
 {
+    
+    public class Blob{
+        public string Name {get;set;}
+        public IDictionary<string, string> Properties { get; set; }
+        public IDictionary<string, string> MetaData { get; set; }
+    }
     public class ListBlobOptions
     {
         /// <summary>
@@ -16,7 +23,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
         /// </summary>
         public Func<XElement, bool> BlobListFilter { get; set; }
 
-        
+
+        public Func<Task<IEnumerable<Blob>>> BlobListProvider { get; set; }
 
        // public 
     }
@@ -30,6 +38,9 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
             LoggingOptions = new LoggingOptions();
             Notifications = new AzureMultiTenantStorageNotifications();
             ListBlobOptions = new ListBlobOptions();
+
+          //  var blob = new CloudBlockBlob(new Uri(""));
+           //var a = new BlobProperties() { BlobType = "aa"}; 
         }
 
         public AzureMultiTenantStorageNotifications Notifications { get; set; }

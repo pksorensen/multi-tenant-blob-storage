@@ -16,6 +16,8 @@ using System.Net;
 using Thinktecture.IdentityModel.Owin.ResourceAuthorization;
 
 using SInnovations.Azure.MultiTenantBlobStorage.Extensions;
+using SInnovations.Azure.MultiTenantBlobStorage.Services.RequestHandlers;
+using SInnovations.Azure.MultiTenantBlobStorage.Services.RequestHandlers.Default;
 
 namespace Owin
 {
@@ -45,6 +47,8 @@ namespace Owin
             container.RegisterType<IBlobAuthenticationService,DefaultBlobAuthenticationService>();
             container.RegisterType<IRequestTenantResolver, DefaultRequestTenantResolver>();
             container.RegisterType<IResourceAuthorizationManager, DefaultResourceAuthorizationManager>();
+            container.RegisterType<IRequestHandlerService, DefaultRequestHandlerService>();
+            container.RegisterType<IListBlobsHandler, DefaultListBlobsHandler>();
 
             app.UseResourceAuthorization(new ResourceAuthorizationMiddlewareOptions
             {

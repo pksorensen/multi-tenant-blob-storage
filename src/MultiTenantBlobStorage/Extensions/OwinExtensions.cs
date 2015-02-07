@@ -19,11 +19,11 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Extensions
             return headers.GetValues(Constants.HeaderConstants.UserAgent);
         }
 
-        public static void CopyTo(this IHeaderDictionary headers, string header, HttpWebRequest request)
+        public static void CopyTo(this IHeaderDictionary headers, string header, HttpWebRequest request, params string[] defaultValues)
         {
-            
-            var values = headers.GetValues(header);
-            if(values == null)
+ 
+            var values = headers.GetValues(header) ?? defaultValues;
+            if(values == null ||!values.Any())
                 return;
 
             switch (header.ToLower())

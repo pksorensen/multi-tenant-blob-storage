@@ -69,7 +69,7 @@ namespace ConsoleTestApplication
                     workset1.DeleteIfExists();
 
                     WriteLine("workset.ListBlobs()");
-                    foreach (var blob in workset.ListBlobs())
+                    foreach (var blob in workset.ListBlobs(useFlatBlobListing:true))
                     {
                         Console.WriteLine(JsonConvert.SerializeObject(blob, Newtonsoft.Json.Formatting.Indented));
                         return;
@@ -89,11 +89,13 @@ namespace ConsoleTestApplication
 
 
                 WriteLine("workset.ListBlobs()");
-                foreach (var blob in workset3.ListBlobs(useFlatBlobListing:true, blobListingDetails: BlobListingDetails.All))
+                foreach (var blob in workset3.ListBlobs(useFlatBlobListing:false))
                 {
-                    Console.WriteLine(JsonConvert.SerializeObject(blob, Newtonsoft.Json.Formatting.Indented));
+                 //   Console.WriteLine(JsonConvert.SerializeObject(blob, Newtonsoft.Json.Formatting.Indented));
                     //Console.ReadKey();
                 }
+                WriteLine("workset.ListBlobs() json");
+                
 
 
 

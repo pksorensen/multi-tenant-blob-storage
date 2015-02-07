@@ -42,6 +42,8 @@ namespace Host
                     {
                         BlobListFilter = (x) =>
                        {
+                           Console.WriteLine(x.ToString());
+                           Console.WriteLine(x.Element("Properties").Element("BlobType").Value);
                            if (x.Element("Properties").Element("Content-Length").Value != "3")
                                return true;
                            return false;
