@@ -44,6 +44,9 @@ namespace ConsoleTestApplication
                 var workset = new CloudBlobContainer(new Uri(localhost + Constants.OwinDefaultMapping + string.Format("/{0}/{1}", Guid.NewGuid(), "workset")));
                 var workset1 = new CloudBlobContainer(new Uri(localhost + Constants.OwinDefaultMapping + string.Format("/{0}/{1}", Guid.NewGuid(), "workset")));
 
+                var service = new CloudBlobClient(new Uri(localhost + Constants.OwinDefaultMapping + string.Format("/{0}/", Guid.NewGuid())));
+
+                service.ListContainers().ToList();
 
                 // var msg = new HttpClient().GetAsync(workset.Uri.AbsoluteUri).GetAwaiter().GetResult();
                 // Console.WriteLine(msg.Content.ReadAsStringAsync().GetAwaiter().GetResult());

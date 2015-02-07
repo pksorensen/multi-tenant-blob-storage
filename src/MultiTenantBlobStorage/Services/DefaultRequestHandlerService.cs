@@ -154,7 +154,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
         {
             var request = BuildDefaultBlobStorageRequest(context, resourceContext);
             Logger.LogRequest(request);
-            var blobAuthenticationService = context.ResolveDependency<IBlobAuthenticationService>();
+            var blobAuthenticationService = context.ResolveDependency<IStorageAccountResolverService>();
             await blobAuthenticationService.SignRequestAsync(request, resourceContext.Route);
 
             await ForwardIncomingRequestStreamAsync(context, request);

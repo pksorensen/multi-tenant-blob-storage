@@ -7,11 +7,5 @@ using System.Threading.Tasks;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 {
-    public interface IBlobAuthenticationService
-    {
-       
-      
 
-        Task SignRequestAsync(HttpWebRequest request, TenantRoute tenantRoute);
-    }
 }

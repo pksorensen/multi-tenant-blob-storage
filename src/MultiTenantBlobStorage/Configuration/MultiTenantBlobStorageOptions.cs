@@ -1,4 +1,5 @@
-﻿using Microsoft.WindowsAzure.Storage.Blob;
+﻿using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Blob;
 using SInnovations.Azure.MultiTenantBlobStorage.Logging;
 using SInnovations.Azure.MultiTenantBlobStorage.Notifications;
 using System;
@@ -43,6 +44,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
            //var a = new BlobProperties() { BlobType = "aa"}; 
         }
 
+        public MultiTenantBlobStorageServiceFactory Factory { get; set; }
         public AzureMultiTenantStorageNotifications Notifications { get; set; }
 
         /// <summary>
@@ -65,6 +67,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
 
         public ListBlobOptions ListBlobOptions { get; set; }
 
-       
+
+
+        public CloudStorageAccount DefaultStorageAccount { get; set; }
     }
 }

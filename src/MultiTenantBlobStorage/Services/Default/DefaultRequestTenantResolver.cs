@@ -20,11 +20,13 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
         {
             var parts = owinRequest.Path.Value.Trim('/').Split('/');
 
-            var route = new TenantRoute
-            {
-                TenantId = parts[0],
-                Resource = parts[1],
-            };
+            var route = new TenantRoute();
+           
+            if(parts.Any())
+                route.TenantId = parts[0];
+            if (parts.Length > 1)
+                route.Resource = parts[1];
+
             route.ContainerName = await ContainerNameService.GetContainerNameAsync(route);
             route.Host = await StorageAccountResolverService.GetBlobEndpointAsync(route);
 

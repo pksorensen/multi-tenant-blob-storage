@@ -42,13 +42,16 @@ namespace Owin
 
             var container = app.UseUnityContainer();
 
-            container.RegisterType<ITenantContainerNameService, DefaultTenantContainerNameService>();
-            container.RegisterType<IStorageAccountResolverService, DefaultStorageAccountResolverService>();
-            container.RegisterType<IBlobAuthenticationService,DefaultBlobAuthenticationService>();
+            var fact = options.Factory ?? new MultiTenantBlobStorageServiceFactory();
+
+            container.RegisterDefaultType<ITenantContainerNameService, DefaultTenantContainerNameService>(fact.TenantContainerNameService);
+            container.RegisterDefaultType<IStorageAccountResolverService, DefaultStorageAccountResolverService>(fact.StorageAccountResolver);
+            
             container.RegisterType<IRequestTenantResolver, DefaultRequestTenantResolver>();
             container.RegisterType<IResourceAuthorizationManager, DefaultResourceAuthorizationManager>();
             container.RegisterType<IRequestHandlerService, DefaultRequestHandlerService>();
             container.RegisterType<IListBlobsHandler, DefaultListBlobsHandler>();
+            
 
             app.UseResourceAuthorization(new ResourceAuthorizationMiddlewareOptions
             {
@@ -83,6 +86,73 @@ namespace Owin
            
 
             return app;
+        }
+        private static void RegisterDefaultType<T, TDefault>(this IUnityContainer container, Registration<T> registration, string name = null)
+            where T : class
+            where TDefault : T
+        {
+            if (registration != null)
+            {
+                container.Register(registration, name);
+            }
+            else
+            {
+                if (name == null)
+                {
+                    container.RegisterType<T, TDefault>(new HierarchicalLifetimeManager());
+                }
+                else
+                {
+                    container.RegisterType<T, TDefault>(name, new HierarchicalLifetimeManager());
+                }
+            }
+        }
+
+        private static void Register(this IUnityContainer container, Registration registration, string name = null)
+        {
+            if (registration.Instance != null)
+            {
+                var reg = container.RegisterInstance(registration.Instance);
+                if (name != null)
+                {
+                    container.RegisterInstance(name,registration.Instance);
+                 
+                }
+                else
+                {
+                    container.RegisterInstance(registration.DependencyType, registration.Instance);
+                }
+            }
+            else if (registration.Type != null)
+            {
+              
+                if (name != null)
+                {
+                    container.RegisterType(registration.DependencyType, registration.Type, name, new HierarchicalLifetimeManager());
+                }
+                else
+                {
+                    container.RegisterType(registration.Type,registration.DependencyType,new HierarchicalLifetimeManager());
+                }
+            }
+            else if (registration.Factory != null)
+            {
+               
+                if (name != null)
+                {
+                    container.RegisterType(registration.DependencyType, registration.Type, name, new HierarchicalLifetimeManager(),new InjectionFactory((c) => registration.Factory(new UnityDependencyResolver(c))));
+                }
+                else
+                {
+                    container.RegisterType(registration.DependencyType, registration.Type, new HierarchicalLifetimeManager(), new InjectionFactory((c) => registration.Factory(new UnityDependencyResolver(c))));
+                }
+            }
+            else
+            {
+                var message = "No type or factory found on registration " + registration.GetType().FullName;
+                Logger.Error(message);
+                throw new InvalidOperationException(message);
+            }
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.Practices.Unity;
+﻿using Microsoft.Owin;
+using Microsoft.Practices.Unity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,6 +24,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
             // this creates a per-request, disposable scope
             using (var scope = _container.CreateChildContainer())
             {
+                scope.RegisterInstance<IOwinContext>(new OwinContext(env));
                 // this makes scope available for downstream frameworks
                 env[Constants.OwinContextProperties.UnityRequestContainer] = scope;
                 await _next(env);
