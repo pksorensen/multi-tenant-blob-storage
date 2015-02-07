@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Text;
 
-namespace System
+namespace SInnovations.Azure.MultiTenantBlobStorage.Extensions
 {
     public static class StringExtensions
     {
