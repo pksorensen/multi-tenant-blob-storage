@@ -10,6 +10,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage
     {
         public static class Actions
         {
+            public const string TenantPrefix = "tenant";
+            public const string ListResources = TenantPrefix + "_get";
             public const string ContainerPrefix = "container";
             public const string ListBlobs   = ContainerPrefix+"_get";
             public const string ContainerExists = ContainerPrefix + "_head";

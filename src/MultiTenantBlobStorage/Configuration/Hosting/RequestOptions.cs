@@ -13,7 +13,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
         public RequestOptions(IOwinRequest owinRequest)
         {
             // TODO: Complete member initialization
-            ContentType = owinRequest.ContentType ?? Constants.ContentTypes.Xml;
+            ContentType = owinRequest.Accept ?? Constants.ContentTypes.Xml;
             CallCancelled = owinRequest.CallCancelled;
         }
         public string ContentType { get; set; }

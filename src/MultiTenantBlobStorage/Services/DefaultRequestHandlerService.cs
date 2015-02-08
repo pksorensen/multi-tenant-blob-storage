@@ -16,6 +16,8 @@ using Newtonsoft.Json;
 using System.Xml.Linq;
 using System.Threading;
 using SInnovations.Azure.MultiTenantBlobStorage.Services.RequestHandlers;
+using System.Globalization;
+using System.Xml;
 namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 {
     
@@ -64,22 +66,22 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
             var requestOption = new RequestOptions(context.Request);
             
             
-            switch (resourceContext.Action)
-            {
-                case Constants.Actions.ListBlobs:
-                    IListBlobsHandler listBlobs = context.ResolveDependency<IListBlobsHandler>();
+            //switch (resourceContext.Action)
+            //{
+            //    case Constants.Actions.ListBlobs:
+            //        IListBlobsHandler listBlobs = context.ResolveDependency<IListBlobsHandler>();
 
-                    if(listBlobs.ImplementsHandleRequest)
-                    {
-                        Logger.Info("Using BlobList Provider");
-                        return listBlobs.HandleRequest(context, resourceContext, requestOption);
+            //        if(listBlobs.ImplementsHandleRequest)
+            //        {
+            //            Logger.Info("Using BlobList Provider");
+            //            return listBlobs.HandleRequest(context, resourceContext, requestOption);
 
-                    }else if (listBlobs.ImplementsRequestTransformer)
-                    {
-                        return ExecuteAsync(context, resourceContext, listBlobs.Transformer, requestOption);
-                    }
-                    break;
-            }
+            //        }else if (listBlobs.ImplementsRequestTransformer)
+            //        {
+            //            return ExecuteAsync(context, resourceContext, listBlobs.Transformer, requestOption);
+            //        }
+            //        break;
+            //}
             return ExecuteAsync(context, resourceContext);
             
 
@@ -115,6 +117,15 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 
             }
 
+            if (!req.Headers.ContainsKey("x-ms-version"))
+            {
+                request.Headers.Add("x-ms-version: 2014-02-14");
+            }
+            if (!req.Headers.ContainsKey("x-ms-date"))
+            {
+                request.Headers.Add("x-ms-date: "+DateTime.UtcNow.ToString("R", CultureInfo.InvariantCulture));
+            }
+
             return request;
 
         }
@@ -132,14 +143,18 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
             var idx = request.Uri.AbsoluteUri.IndexOf(resourceId) + resourceId.Length;
             var pathAndQuery = request.Uri.AbsoluteUri.Substring(idx);
             var qIdx = pathAndQuery.IndexOf('?');
+           
             if (qIdx >= 0)
             {
                 // ResourceContext.Action
+                
             }
+            if (resourceContext.Route.Resource.IsMissing())
+                pathAndQuery += (qIdx>=0?"&":"?")+ "prefix=" + resourceContext.Route.ContainerName;
 
             resourceContext.Route.Path = qIdx > -1 ? pathAndQuery.Substring(0, qIdx) : pathAndQuery;
 
-            var uri = new Uri(resourceContext.Route.Host + resourceContext.Route.ContainerName + pathAndQuery);
+            var uri = new Uri(resourceContext.Route.Host + ( resourceContext.Route.Resource.IsMissing() ?"": resourceContext.Route.ContainerName) + pathAndQuery);
             // var request = new HttpRequestMessage(msg.Method, uri);
             var req = (HttpWebRequest)WebRequest.Create(uri);
             req.Method = request.Method;
@@ -167,23 +182,27 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 
                 foreach (var headerKey in response.Headers.AllKeys)
                 {
-                    context.Response.Headers.Add(headerKey, response.Headers.GetValues(headerKey));
+                    response.Headers.CopyTo(headerKey, context.Response);
+                    //context.Response.Headers.Add(headerKey, response.Headers.GetValues(headerKey));
                 }
 
 
 
                 if (response.ContentLength != 0)
                 {
-                    var stream = response.GetResponseStream();
+                    using (var stream = response.GetResponseStream())
+                    {
 
-                    if (provider == null)
-                    {
-                        await ForwardDefaultResponseStreamAsync(context, stream);
-                    }
-                    else
-                    {
-                        await provider(stream, context.Response.Body, options);
-                       
+                        if (provider == null)
+                        {
+                            await ForwardDefaultResponseStreamAsync(context, stream, resourceContext);
+                        }
+                        else
+                        {
+                            await provider(stream, context.Response.Body, options);
+
+                        }
+
                     }
 
                 }
@@ -192,16 +211,151 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 
 
         }
-
-        private static async Task ForwardDefaultResponseStreamAsync(IOwinContext context, Stream stream)
+        private void writeJson(JsonWriter writer, XmlReader reader, string root)
         {
-            byte[] buffer = new byte[81920];
-            int count;
-            while ((count = await stream.ReadAsync(buffer, 0, buffer.Length, context.Request.CallCancelled)) != 0)
+            while (reader.Read())
             {
-                context.Request.CallCancelled.ThrowIfCancellationRequested();
+                WriteJsonElement(reader, writer, root);
+            }
+        }
+        private async Task WriteJsonAsync(Stream incoming, Stream outgoing,Func<string,string> tenantNameTransform, params string[] parseInfo)
+        {
+            XmlReaderSettings readerSettings = new XmlReaderSettings();
+            readerSettings.IgnoreWhitespace = false;
+            readerSettings.Async = true;
+            var reader = XmlReader.Create(incoming, readerSettings);
+            
+            var jsonWriter = new JsonTextWriter(new StreamWriter(outgoing));
+           // jsonWriter.WriteStartObject();
+          //  var serializer = JsonSerializer.CreateDefault();
+            while (await reader.ReadAsync())
+            {
+                if (parseInfo.Any(a=>a== reader.Name))
+                {
+                  //  jsonWriter.WriteStartArray();
+                    while (parseInfo.Any(a => a == reader.Name))
+                    {
+                        var name = reader.Name;
+                        var node = XNode.ReadFrom(reader);
+                        var el = (XElement)node;
+                        var nameEl = el.Element("Name");                      
+                       
+                        if (tenantNameTransform != null)
+                        {
+                           
+                            nameEl.SetValue(tenantNameTransform(nameEl.Value));
+                        }
+                       
+                        writeJson(jsonWriter, node.CreateReader(), name);
+                        //serializer.Serialize(jsonWriter, node);
+                    }
+                 //   jsonWriter.WriteEndArray();
 
-                await context.Response.Body.WriteAsync(buffer, 0, count, context.Request.CallCancelled);
+                }
+
+                WriteJsonElement(reader, jsonWriter, "EnumerationResults");
+
+            }
+          //  jsonWriter.WriteEndObject();
+            jsonWriter.Flush();
+        }
+      
+        private void WriteJsonElement(XmlReader reader, JsonWriter writer, string root)
+        {
+            if (reader.NodeType == XmlNodeType.Element)
+            {
+                bool started = false;
+                if (reader.LocalName != root)
+                {
+                    if (writer.WriteState != Newtonsoft.Json.WriteState.Object)
+                        writer.WriteStartObject();
+                    writer.WritePropertyName(reader.LocalName.Substring(0,1).ToLower() + reader.LocalName.Substring(1));
+                }
+                else
+                {
+                    writer.WriteStartObject();
+                    writer.WritePropertyName("$type");
+                    writer.WriteValue(root);
+                    started = true;
+                }
+               
+                
+
+                if (reader.LocalName == "Containers" || reader.LocalName == "Blobs")
+                {
+                    writer.WriteStartArray();
+                }
+                else if (reader.HasAttributes)
+                {
+                    if(!started)
+                    {
+                        writer.WriteStartObject();
+                        started = true;
+                    }
+                    
+                    while (reader.MoveToNextAttribute())
+                    {
+                        writer.WritePropertyName(reader.Name);
+                        writer.WriteValue(reader.Value);
+                        //  Console.WriteLine(" {0}={1}", reader.Name, reader.Value);
+                    }
+                    // Move the reader back to the element node.
+                    reader.MoveToElement();
+                }
+
+                if (reader.IsEmptyElement)
+                {
+                    if (!started)
+                        writer.WriteStartObject();
+                    writer.WriteEndObject();
+                }
+            }
+            else if (reader.NodeType == XmlNodeType.EndElement)
+            {
+                if (reader.LocalName == "Containers" || reader.LocalName == "Blobs")
+                {
+                    writer.WriteEndArray();
+                }
+                else
+                {
+                    writer.WriteEndObject();
+                }
+            }
+            else if (reader.NodeType == XmlNodeType.Text)
+            {
+                writer.WriteValue(reader.Value);
+                reader.Read();//skip end of a value
+            }
+
+           
+        }
+        private async Task ForwardDefaultResponseStreamAsync(IOwinContext context, Stream stream, ResourceContext resourceContext)
+        {
+            if (context.Request.Accept.IsPresent() && context.Request.Accept.IndexOf(Constants.ContentTypes.Json,StringComparison.OrdinalIgnoreCase) > -1)
+            {
+                if (resourceContext.Action == Constants.Actions.ListBlobs)
+                {
+                    await WriteJsonAsync(stream, context.Response.Body,null, "Blob","BlobPrefix");
+                    return;
+                }else if(resourceContext.Action == Constants.Actions.ListResources)
+                {
+                    await WriteJsonAsync(stream, context.Response.Body, (s)=> s.Substring(resourceContext.Route.ContainerName.Length+1),"Container");
+                    return;
+                }
+
+            }
+           
+
+            {
+                byte[] buffer = new byte[81920];
+                int count;
+                while ((count = await stream.ReadAsync(buffer, 0, buffer.Length, context.Request.CallCancelled)) != 0)
+                {
+                    context.Request.CallCancelled.ThrowIfCancellationRequested();
+
+                    await context.Response.Body.WriteAsync(buffer, 0, count, context.Request.CallCancelled);
+                }
+                await context.Response.Body.FlushAsync();
             }
         }
 

@@ -18,7 +18,33 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Extensions
         {
             return headers.GetValues(Constants.HeaderConstants.UserAgent);
         }
+        public static void CopyTo(this WebHeaderCollection headers, string header, IOwinResponse response, params string[] defaultValues)
+        {
+            var values = headers.GetValues(header) ?? defaultValues;
+            if (values == null || !values.Any())
+                return;
+            switch (header.ToLower())
+            {
+                case Constants.HeaderConstants.ContentType:
+                    response.ContentType = string.Join(", ", values);
+                    return;
+                case Constants.HeaderConstants.ContentLenght:
+                    response.ContentLength = long.Parse(values.First());
+                    return;
+                case Constants.HeaderConstants.TansferEncoding:
+                    var action = response.Context.Get<Action>("server.DisableResponseBuffering");
+                    if (action != null)
+                    {
+                        action();
+                    }
+                    return;
+               
+            }
 
+
+            response.Headers.SetValues(header,values);
+            
+        }
         public static void CopyTo(this IHeaderDictionary headers, string header, HttpWebRequest request, params string[] defaultValues)
         {
  

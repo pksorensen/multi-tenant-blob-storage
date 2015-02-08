@@ -74,10 +74,10 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.RequestHandlers.Def
                 var serializer = JsonSerializer.CreateDefault();
                 while (reader.Read())
                 {
-                    if (reader.Name == "Blob")
+                    if (reader.Name == "Blob" || reader.Name == "BlobPrefix")
                     {
                         jsonWriter.WriteStartArray();
-                        while (reader.Name == "Blob")
+                        while (reader.Name == "Blob" || reader.Name == "BlobPrefix")
                         {
                             var node = XNode.ReadFrom(reader);
                             var el = (XElement)node;

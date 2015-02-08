@@ -12,7 +12,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
         public Task<string> GetContainerNameAsync(TenantRoute route)
         {
             if (route.Resource.IsMissing())
-                return Task.FromResult<string>(null);
+                return Task.FromResult<string>(new Guid(route.TenantId).ToString("N"));
             return Task.FromResult(string.Format("{0}-{1}", new Guid(route.TenantId).ToString("N"), route.Resource));
         }
     }

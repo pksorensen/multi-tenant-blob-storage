@@ -36,7 +36,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
         {
             get
             {
-                return new ResourceAuthorizationContext(this.User, Action, Route.ContainerName);
+                return new ResourceAuthorizationContext(this.User, new []{ new Claim("action", Action)}, new []{new Claim("tenant", Route.TenantId),new Claim("resource", Route.ContainerName??"")});
             }
         }
 
@@ -60,6 +60,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
         public async Task Invoke(IDictionary<string, object> env)
         {
             Context = new OwinContext(env);
+            
+
             Options = Context.ResolveDependency<MultiTenantBlobStorageOptions>();
             var requestHandler = Context.ResolveDependency<IRequestHandlerService>();
 
@@ -67,7 +69,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
 
             ResourceContext.User = await requestHandler.AuthenticateRequestAsync(Context.Request, Options) ?? new ClaimsPrincipal();
             ResourceContext.Route = await requestHandler.ParseRouteDataAsync(Context.Request, Options);
-            ResourceContext.Action = string.Format("{0}_{1}", ResourceContext.Route.Path.IsMissing() ? "container" : "blob", Context.Request.Method.ToLower());
+            ResourceContext.Action = string.Format("{0}_{1}", ResourceContext.Route.Path.IsMissing() ? (ResourceContext.Route.Resource.IsMissing()?Constants.Actions.TenantPrefix: Constants.Actions.ContainerPrefix) : Constants.Actions.BlobPrefix, Context.Request.Method.ToLower());
             
             if (await Context.CheckAccessAsync(ResourceContext.ResourceAuthorizationContext))
             {
@@ -81,6 +83,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
                 HandleUnauthorizedRequest(ResourceContext.ResourceAuthorizationContext);
             }
 
+            Context.Response.Body.Flush();
 
             //await _next(env);
         }
