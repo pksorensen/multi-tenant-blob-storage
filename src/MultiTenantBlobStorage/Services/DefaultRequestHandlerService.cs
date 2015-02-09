@@ -269,7 +269,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                 {
                     if (writer.WriteState != Newtonsoft.Json.WriteState.Object)
                         writer.WriteStartObject();
-                    writer.WritePropertyName(reader.LocalName.Substring(0,1).ToLower() + reader.LocalName.Substring(1));
+                    writer.WritePropertyName(reader.LocalName.Substring(0,1).ToLower() + reader.LocalName.Substring(1).Replace("-",""));
                 }
                 else
                 {
