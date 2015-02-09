@@ -66,8 +66,19 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
             var requestOption = new RequestOptions(context.Request);
             
             
+            
+            if( resourceContext.Action==Constants.Actions.ContainerDelete && Options.DeleteOptions.SetMetaDataOnDelete != null)
+            {
+                return SetMetaDataOnDeleteAsync(context, resourceContext);
+              
+            }
             //switch (resourceContext.Action)
             //{
+            //    case :
+
+                 //   break;
+
+
             //    case Constants.Actions.ListBlobs:
             //        IListBlobsHandler listBlobs = context.ResolveDependency<IListBlobsHandler>();
 
@@ -81,13 +92,36 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
             //            return ExecuteAsync(context, resourceContext, listBlobs.Transformer, requestOption);
             //        }
             //        break;
-            //}
+         //   }
+
+
             return ExecuteAsync(context, resourceContext);
             
 
            
         }
+        private async Task SetMetaDataOnDeleteAsync(IOwinContext context, ResourceContext resourceContext)
+        {
+            var storage = context.ResolveDependency<IStorageAccountResolverService>().GetStorageAccount(resourceContext.Route);
 
+            var metadata = Options.DeleteOptions.SetMetaDataOnDelete();
+            var container = storage.CreateCloudBlobClient().GetContainerReference(resourceContext.Route.ContainerName);
+            if(await container.ExistsAsync())
+            {
+                await container.FetchAttributesAsync();
+                foreach (var key in metadata.Keys)
+                    container.Metadata[key] = metadata[key];
+
+                await container.SetMetadataAsync();
+                context.Response.StatusCode = (int)HttpStatusCode.Accepted;
+
+            }
+            else
+            {
+                context.Response.StatusCode =(int) HttpStatusCode.NotFound;
+                context.Response.ReasonPhrase = string.Format("{0} does not exist", Options.ContainerResourceName ?? "container");
+            }
+        }
       
 
         /// <summary>
@@ -195,7 +229,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 
                         if (provider == null)
                         {
-                            await ForwardDefaultResponseStreamAsync(context, stream, resourceContext);
+                            await ForwardDefaultResponseStreamAsync(context, stream, resourceContext, Options.ListBlobOptions.BlobListFilter);
                         }
                         else
                         {
@@ -218,7 +252,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                 WriteJsonElement(reader, writer, root);
             }
         }
-        private async Task WriteJsonAsync(Stream incoming, Stream outgoing,Func<string,string> tenantNameTransform, params string[] parseInfo)
+        private async Task WriteJsonAsync(Stream incoming, Stream outgoing,Func<string,string> tenantNameTransform, Func<XElement,bool> listFilter, params string[] parseInfo)
         {
             XmlReaderSettings readerSettings = new XmlReaderSettings();
             readerSettings.IgnoreWhitespace = false;
@@ -238,15 +272,19 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                         var name = reader.Name;
                         var node = XNode.ReadFrom(reader);
                         var el = (XElement)node;
-                        var nameEl = el.Element("Name");                      
-                       
-                        if (tenantNameTransform != null)
+
+                        if (listFilter==null || listFilter(el))
                         {
-                           
-                            nameEl.SetValue(tenantNameTransform(nameEl.Value));
+                            var nameEl = el.Element("Name");
+
+                            if (tenantNameTransform != null)
+                            {
+
+                                nameEl.SetValue(tenantNameTransform(nameEl.Value));
+                            }
+
+                            writeJson(jsonWriter, node.CreateReader(), name);
                         }
-                       
-                        writeJson(jsonWriter, node.CreateReader(), name);
                         //serializer.Serialize(jsonWriter, node);
                     }
                  //   jsonWriter.WriteEndArray();
@@ -336,17 +374,17 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 
            
         }
-        private async Task ForwardDefaultResponseStreamAsync(IOwinContext context, Stream stream, ResourceContext resourceContext)
+        private async Task ForwardDefaultResponseStreamAsync(IOwinContext context, Stream stream, ResourceContext resourceContext, Func<XElement,bool> listFilter)
         {
             if (context.Request.Accept.IsPresent() && context.Request.Accept.IndexOf(Constants.ContentTypes.Json,StringComparison.OrdinalIgnoreCase) > -1)
             {
                 if (resourceContext.Action == Constants.Actions.ListBlobs)
                 {
-                    await WriteJsonAsync(stream, context.Response.Body,null, "Blob","BlobPrefix");
+                    await WriteJsonAsync(stream, context.Response.Body,null,listFilter, "Blob","BlobPrefix");
                     return;
                 }else if(resourceContext.Action == Constants.Actions.ListResources)
                 {
-                    await WriteJsonAsync(stream, context.Response.Body, (s)=> s.Substring(resourceContext.Route.ContainerName.Length+1),"Container");
+                    await WriteJsonAsync(stream, context.Response.Body, (s)=> s.Substring(resourceContext.Route.ContainerName.Length+1),listFilter,"Container");
                     return;
                 }
 

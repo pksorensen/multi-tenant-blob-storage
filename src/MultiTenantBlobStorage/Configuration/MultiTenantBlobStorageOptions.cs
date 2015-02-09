@@ -39,6 +39,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
             LoggingOptions = new LoggingOptions();
             Notifications = new AzureMultiTenantStorageNotifications();
             ListBlobOptions = new ListBlobOptions();
+            DeleteOptions = new DeleteOptions();
 
           //  var blob = new CloudBlockBlob(new Uri(""));
            //var a = new BlobProperties() { BlobType = "aa"}; 
@@ -67,7 +68,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
 
         public ListBlobOptions ListBlobOptions { get; set; }
 
-
+        public DeleteOptions DeleteOptions { get; set; } 
 
         public CloudStorageAccount DefaultStorageAccount { get; set; }
     }

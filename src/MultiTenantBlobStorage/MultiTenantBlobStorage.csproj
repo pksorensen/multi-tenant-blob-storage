@@ -92,6 +92,7 @@
     <Compile Include="Configuration\AppBuilderExtensions\ConfigureRequestIdExtension.cs" />
     <Compile Include="Configuration\AppBuilderExtensions\UnityExtensions.cs" />
     <Compile Include="Configuration\AppBuilderExtensions\UseMultiTenantBlobStorageExtensions.cs" />
+    <Compile Include="Configuration\DeleteOptions.cs" />
     <Compile Include="Configuration\Hosting\ListBlobsRequestOptions.cs" />
     <Compile Include="Configuration\Hosting\RequestOptions.cs" />
     <Compile Include="Configuration\Hosting\RequireSslMiddleware.cs" />
