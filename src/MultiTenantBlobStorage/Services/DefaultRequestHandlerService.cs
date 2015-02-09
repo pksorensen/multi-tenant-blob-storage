@@ -305,9 +305,16 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 
                 if (reader.IsEmptyElement)
                 {
-                    if (!started)
-                        writer.WriteStartObject();
-                    writer.WriteEndObject();
+                    if (reader.LocalName == "Containers" || reader.LocalName == "Blobs")
+                    {
+                        writer.WriteEndArray();
+                    }
+                    else
+                    {
+                        if (!started)
+                            writer.WriteStartObject();
+                        writer.WriteEndObject();
+                    }
                 }
             }
             else if (reader.NodeType == XmlNodeType.EndElement)
