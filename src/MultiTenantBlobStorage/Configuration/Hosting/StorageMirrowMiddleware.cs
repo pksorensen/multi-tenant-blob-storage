@@ -69,7 +69,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
 
             ResourceContext.User = await requestHandler.AuthenticateRequestAsync(Context.Request, Options) ?? new ClaimsPrincipal();
             ResourceContext.Route = await requestHandler.ParseRouteDataAsync(Context.Request, Options);
-            ResourceContext.Action = string.Format("{0}_{1}", ResourceContext.Route.Path.Trim('/').IsMissing() ? (ResourceContext.Route.Resource.IsMissing()?Constants.Actions.TenantPrefix: Constants.Actions.ContainerPrefix) : Constants.Actions.BlobPrefix, Context.Request.Method.ToLower());
+            ResourceContext.Action = string.Format("{0}_{1}", ResourceContext.Route.Path.IsMissing() ? (ResourceContext.Route.Resource.IsMissing()?Constants.Actions.TenantPrefix: Constants.Actions.ContainerPrefix) : Constants.Actions.BlobPrefix, Context.Request.Method.ToLower());
      
             if (await Context.CheckAccessAsync(ResourceContext.ResourceAuthorizationContext))
             {

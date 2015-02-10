@@ -208,7 +208,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
             if (resourceContext.Route.Resource.IsMissing())
                 pathAndQuery += (qIdx>=0?"&":"?")+ "prefix=" + resourceContext.Route.ContainerName;
 
-            resourceContext.Route.Path = qIdx > -1 ? pathAndQuery.Substring(0, qIdx) : pathAndQuery;
+           
 
             var uri = new Uri(resourceContext.Route.Host + ( resourceContext.Route.Resource.IsMissing() ?"": resourceContext.Route.ContainerName) + pathAndQuery);
             // var request = new HttpRequestMessage(msg.Method, uri);

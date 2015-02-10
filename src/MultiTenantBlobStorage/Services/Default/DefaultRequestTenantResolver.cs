@@ -35,7 +35,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
             var pathAndQuery = owinRequest.Uri.AbsoluteUri.Substring(idx);
             var qIdx = pathAndQuery.IndexOf('?');
 
-            route.Path = qIdx > -1 ? pathAndQuery.Substring(0, qIdx) : pathAndQuery;
+            route.Path = Uri.UnescapeDataString( (qIdx > -1 ? pathAndQuery.Substring(0, qIdx) : pathAndQuery).TrimStart('/')) ;
 
             return route;
         }
