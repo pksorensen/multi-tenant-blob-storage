@@ -67,7 +67,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
             
             
             
-            if( resourceContext.Action==Constants.Actions.ContainerDelete && Options.DeleteOptions.SetMetaDataOnDelete != null)
+            if( resourceContext.Action.EndsWith("delete") && Options.DeleteOptions.SetMetaDataOnDelete != null)
             {
                 return SetMetaDataOnDeleteAsync(context, resourceContext);
               
@@ -106,20 +106,42 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 
             var metadata = Options.DeleteOptions.SetMetaDataOnDelete();
             var container = storage.CreateCloudBlobClient().GetContainerReference(resourceContext.Route.ContainerName);
-            if(await container.ExistsAsync())
+            if (resourceContext.Route.Path.IsPresent())
             {
-                await container.FetchAttributesAsync();
-                foreach (var key in metadata.Keys)
-                    container.Metadata[key] = metadata[key];
+                var blob = container.GetBlockBlobReference(resourceContext.Route.Path);
+                if (await blob.ExistsAsync())
+                {
+                    foreach (var key in metadata.Keys)
+                        blob.Metadata[key] = metadata[key];
+                    await blob.SetMetadataAsync();
+                    context.Response.StatusCode = (int)HttpStatusCode.Accepted;
+                }
+                else
+                {
+                    context.Response.StatusCode = (int)HttpStatusCode.NotFound;
+                    context.Response.ReasonPhrase = string.Format("{0} does not exist", Options.ContainerResourceName ?? "blob");
+                }
 
-                await container.SetMetadataAsync();
-                context.Response.StatusCode = (int)HttpStatusCode.Accepted;
 
             }
             else
             {
-                context.Response.StatusCode =(int) HttpStatusCode.NotFound;
-                context.Response.ReasonPhrase = string.Format("{0} does not exist", Options.ContainerResourceName ?? "container");
+                if (await container.ExistsAsync())
+                {
+
+                    //await container.FetchAttributesAsync();
+                    foreach (var key in metadata.Keys)
+                        container.Metadata[key] = metadata[key];
+
+                    await container.SetMetadataAsync();
+                    context.Response.StatusCode = (int)HttpStatusCode.Accepted;
+
+                }
+                else
+                {
+                    context.Response.StatusCode = (int)HttpStatusCode.NotFound;
+                    context.Response.ReasonPhrase = string.Format("{0} does not exist", Options.ContainerResourceName ?? "container");
+                }
             }
         }
       
@@ -378,6 +400,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
         {
             if (context.Request.Accept.IsPresent() && context.Request.Accept.IndexOf(Constants.ContentTypes.Json,StringComparison.OrdinalIgnoreCase) > -1)
             {
+                context.Response.ContentType = Constants.ContentTypes.Json;
                 if (resourceContext.Action == Constants.Actions.ListBlobs)
                 {
                     await WriteJsonAsync(stream, context.Response.Body,null,listFilter, "Blob","BlobPrefix");
