@@ -30,6 +30,13 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
             route.ContainerName = await ContainerNameService.GetContainerNameAsync(route);
             route.Host = await StorageAccountResolverService.GetBlobEndpointAsync(route);
 
+            var resourceId = string.Format("{0}/{1}",route.TenantId,  route.Resource);
+            var idx = owinRequest.Uri.AbsoluteUri.IndexOf(resourceId) + resourceId.Length;
+            var pathAndQuery = owinRequest.Uri.AbsoluteUri.Substring(idx);
+            var qIdx = pathAndQuery.IndexOf('?');
+
+            route.Path = qIdx > -1 ? pathAndQuery.Substring(0, qIdx) : pathAndQuery;
+
             return route;
         }
     }
