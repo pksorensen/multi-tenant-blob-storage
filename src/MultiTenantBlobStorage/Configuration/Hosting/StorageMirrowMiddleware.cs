@@ -50,50 +50,51 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
         readonly Func<IDictionary<string, object>, Task> _next;
 
 
-        protected OwinContext Context { get; set; }
-        protected ResourceContext ResourceContext { get; set; }
-        protected MultiTenantBlobStorageOptions Options { get; set; }
+      //  protected OwinContext Context { get; set; }
+       // protected ResourceContext ResourceContext { get; set; }
+       // protected MultiTenantBlobStorageOptions Options { get; set; }
         public StorageMirrowMiddleware(Func<IDictionary<string, object>, Task> next)
         {
             _next = next;
-            ResourceContext = new ResourceContext();
+            
         }
         public async Task Invoke(IDictionary<string, object> env)
         {
-            Context = new OwinContext(env);
-            Context.Response.OnSendingHeaders((obj) =>
+            var context = new OwinContext(env);
+            var resourceContext = new ResourceContext();
+            context.Response.OnSendingHeaders((obj) =>
             {
-                Trace.WriteLine("SENDING HEADERS");
+               // Trace.WriteLine("SENDING HEADERS");
             }, null);
 
-            Options = Context.ResolveDependency<MultiTenantBlobStorageOptions>();
-            var requestHandler = Context.ResolveDependency<IRequestHandlerService>();
+            var options = context.ResolveDependency<MultiTenantBlobStorageOptions>();
+            var requestHandler = context.ResolveDependency<IRequestHandlerService>();
 
          //   requestHandler.ListBlobsStreamingTransform = TestStreamTransform;
 
-            ResourceContext.User = await requestHandler.AuthenticateRequestAsync(Context.Request, Options) ?? new ClaimsPrincipal();
-            ResourceContext.Route = await requestHandler.ParseRouteDataAsync(Context.Request, Options);
-            ResourceContext.Action = string.Format("{0}_{1}{2}", 
-                ResourceContext.Route.Path.IsMissing() ? (ResourceContext.Route.Resource.IsMissing()?Constants.Actions.TenantPrefix: Constants.Actions.ContainerPrefix) : Constants.Actions.BlobPrefix,
-                Context.Request.Method.ToLower(),
-                Context.Request.Query["comp"].IsPresent() ? "_"+Context.Request.Query["comp"]:"");
+            resourceContext.User = await requestHandler.AuthenticateRequestAsync(context.Request, options) ?? new ClaimsPrincipal();
+            resourceContext.Route = await requestHandler.ParseRouteDataAsync(context.Request, options);
+            resourceContext.Action = string.Format("{0}_{1}{2}",
+                resourceContext.Route.Path.IsMissing() ? (resourceContext.Route.Resource.IsMissing() ? Constants.Actions.TenantPrefix : Constants.Actions.ContainerPrefix) : Constants.Actions.BlobPrefix,
+                context.Request.Method.ToLower(),
+                context.Request.Query["comp"].IsPresent() ? "_" + context.Request.Query["comp"] : "");
 
-     
-            
 
-            if (await Context.CheckAccessAsync(ResourceContext.ResourceAuthorizationContext))
+
+
+            if (await context.CheckAccessAsync(resourceContext.ResourceAuthorizationContext))
             {
 
-                await requestHandler.HandleAsync(Context, ResourceContext);
+                await requestHandler.HandleAsync(context, resourceContext);
 
             }
             else
             {
 
-                HandleUnauthorizedRequest(ResourceContext.ResourceAuthorizationContext);
+                HandleUnauthorizedRequest( context, resourceContext.ResourceAuthorizationContext);
             }
 
-            Context.Response.Body.Flush();
+            context.Response.Body.Flush();
 
             //await _next(env);
         }
@@ -102,7 +103,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
 
       
        
-        protected void HandleUnauthorizedRequest(ResourceAuthorizationContext actionContext)
+        protected void HandleUnauthorizedRequest( IOwinContext context, ResourceAuthorizationContext actionContext)
         {
             if (actionContext.Principal != null &&
                 actionContext.Principal.Identity != null &&
@@ -110,14 +111,14 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
             {
                 // actionContext.Response = actionContext.ControllerContext.Request.CreateErrorResponse(HttpStatusCode.Forbidden, "Forbidden");
 
-                Context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-                Context.Response.ReasonPhrase = "Forbidden";
+                context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                context.Response.ReasonPhrase = "Forbidden";
 
             }
             else
             {
-                Context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                Context.Response.ReasonPhrase = "Unauthorized";
+                context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                context.Response.ReasonPhrase = "Unauthorized";
             }
         }
 

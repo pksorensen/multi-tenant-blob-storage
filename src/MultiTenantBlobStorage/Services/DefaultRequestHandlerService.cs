@@ -21,12 +21,12 @@ using System.Xml;
 using System.Diagnostics;
 namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 {
-    
-    
-   
-   
-   
-   
+
+
+
+
+
+
     public class DefaultRequestHandlerService : IRequestHandlerService
     {
         static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
@@ -40,7 +40,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 
         //protected IListBlobsService 
 
-       // public Func<Stream, Stream,ListBlobsRequestOptions, Task> ListBlobsStreamingTransform { get; set; }
+        // public Func<Stream, Stream,ListBlobsRequestOptions, Task> ListBlobsStreamingTransform { get; set; }
 
 
 
@@ -65,23 +65,22 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
         public async Task HandleAsync(IOwinContext context, ResourceContext resourceContext)
         {
             var requestOption = new RequestOptions(context.Request);
+
             
-            
-            
-            
-            if( resourceContext.Action.EndsWith("delete") && Options.DeleteOptions.SetMetaDataOnDelete != null)
+
+            if (resourceContext.Action.EndsWith("delete") && Options.DeleteOptions.SetMetaDataOnDelete != null)
             {
                 await SetMetaDataOnDeleteAsync(context, resourceContext);
                 return;
             }
-            
+
             // Handle Request, either override by handlers or default
             var handlers = context.ResolveDependency<IRequestHandler[]>();
             var tasks = handlers.Select(h => h.CanHandleRequestAsync(context, resourceContext)).ToArray();
             Task.WaitAll(tasks);
             handlers = handlers.Where((h, i) => !tasks[i].IsFaulted && !tasks[i].IsCanceled && tasks[i].Result).ToArray();
-           
-            if(handlers.Any())
+
+            if (handlers.Any())
             {
                 var handler = handlers.Single();
 
@@ -97,10 +96,10 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                 var handler = handlers.Single();
 
                 await handler.OnAfterHandleRequestAsync(context, resourceContext);
-                  
+
 
             }
-           
+
         }
         private async Task SetMetaDataOnDeleteAsync(IOwinContext context, ResourceContext resourceContext)
         {
@@ -146,7 +145,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                 }
             }
         }
-      
+
 
         /// <summary>
         /// Builds a httpwebrequset to carry out a mirrow to blob storage.
@@ -155,8 +154,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
         /// <returns></returns>
         protected virtual HttpWebRequest BuildDefaultBlobStorageRequest(IOwinContext context, ResourceContext resourceContext)
         {
-            
-            var request = CreateHttpWebRequest(context.Request,resourceContext);
+
+            var request = CreateHttpWebRequest(context.Request, resourceContext);
             var req = context.Request;
 
             if ((req.Method == Constants.HttpMethods.Post || req.Method == Constants.HttpMethods.Put))
@@ -181,7 +180,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
             }
             if (!req.Headers.ContainsKey("x-ms-date"))
             {
-                request.Headers.Add("x-ms-date: "+DateTime.UtcNow.ToString("R", CultureInfo.InvariantCulture));
+                request.Headers.Add("x-ms-date: " + DateTime.UtcNow.ToString("R", CultureInfo.InvariantCulture));
             }
 
             return request;
@@ -201,22 +200,22 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
             var idx = request.Uri.AbsoluteUri.IndexOf(resourceId) + resourceId.Length;
             var pathAndQuery = request.Uri.AbsoluteUri.Substring(idx);
             var qIdx = pathAndQuery.IndexOf('?');
-           
+
             if (qIdx >= 0)
             {
                 // ResourceContext.Action
-                
+
             }
             if (resourceContext.Route.Resource.IsMissing())
-                pathAndQuery += (qIdx>=0?"&":"?")+ "prefix=" + resourceContext.Route.ContainerName;
+                pathAndQuery += (qIdx >= 0 ? "&" : "?") + "prefix=" + resourceContext.Route.ContainerName;
 
-           
 
-            var uri = new Uri(resourceContext.Route.Host + ( resourceContext.Route.Resource.IsMissing() ?"": resourceContext.Route.ContainerName) + pathAndQuery);
+
+            var uri = new Uri(resourceContext.Route.Host + (resourceContext.Route.Resource.IsMissing() ? "" : resourceContext.Route.ContainerName) + pathAndQuery);
             // var request = new HttpRequestMessage(msg.Method, uri);
             var req = (HttpWebRequest)WebRequest.Create(uri);
             req.Method = request.Method;
-         
+
             return req;
         }
         private Task ExecuteAsync(IOwinContext context, ResourceContext resourceContext)
@@ -225,17 +224,21 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
         }
         private async Task ExecuteAsync<T>(IOwinContext context, ResourceContext resourceContext, Func<Stream, Stream, T, Task> provider = null, T options = null) where T : RequestOptions
         {
-           
+
             var request = BuildDefaultBlobStorageRequest(context, resourceContext);
             Logger.LogRequest(request);
             var blobAuthenticationService = context.ResolveDependency<IStorageAccountResolverService>();
             await blobAuthenticationService.SignRequestAsync(request, resourceContext.Route);
 
+            await Task.Delay(2500);
+
+
+
             await ForwardIncomingRequestStreamAsync(context, request);
 
             using (HttpWebResponse response = await GetResponseAsync(request))
             {
-               
+
                 context.Response.ReasonPhrase = response.StatusDescription;
                 context.Response.StatusCode = (int)response.StatusCode;
 
@@ -265,7 +268,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                     }
 
                 }
-                
+
             }
 
 
@@ -277,28 +280,28 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                 WriteJsonElement(reader, writer, root);
             }
         }
-        private async Task WriteJsonAsync(Stream incoming, Stream outgoing,Func<string,string> tenantNameTransform, Func<XElement,bool> listFilter, params string[] parseInfo)
+        private async Task WriteJsonAsync(Stream incoming, Stream outgoing, Func<string, string> tenantNameTransform, Func<XElement, bool> listFilter, params string[] parseInfo)
         {
             XmlReaderSettings readerSettings = new XmlReaderSettings();
             readerSettings.IgnoreWhitespace = false;
             readerSettings.Async = true;
             var reader = XmlReader.Create(incoming, readerSettings);
-            
+
             var jsonWriter = new JsonTextWriter(new StreamWriter(outgoing));
-           // jsonWriter.WriteStartObject();
-          //  var serializer = JsonSerializer.CreateDefault();
+            // jsonWriter.WriteStartObject();
+            //  var serializer = JsonSerializer.CreateDefault();
             while (await reader.ReadAsync())
             {
-                if (parseInfo.Any(a=>a== reader.Name))
+                if (parseInfo.Any(a => a == reader.Name))
                 {
-                  //  jsonWriter.WriteStartArray();
+                    //  jsonWriter.WriteStartArray();
                     while (parseInfo.Any(a => a == reader.Name))
                     {
                         var name = reader.Name;
                         var node = XNode.ReadFrom(reader);
                         var el = (XElement)node;
 
-                        if (listFilter==null || listFilter(el))
+                        if (listFilter == null || listFilter(el))
                         {
                             var nameEl = el.Element("Name");
 
@@ -312,17 +315,17 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                         }
                         //serializer.Serialize(jsonWriter, node);
                     }
-                 //   jsonWriter.WriteEndArray();
+                    //   jsonWriter.WriteEndArray();
 
                 }
 
                 WriteJsonElement(reader, jsonWriter, "EnumerationResults");
 
             }
-          //  jsonWriter.WriteEndObject();
+            //  jsonWriter.WriteEndObject();
             jsonWriter.Flush();
         }
-      
+
         private void WriteJsonElement(XmlReader reader, JsonWriter writer, string root)
         {
             if (reader.NodeType == XmlNodeType.Element)
@@ -332,7 +335,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                 {
                     if (writer.WriteState != Newtonsoft.Json.WriteState.Object)
                         writer.WriteStartObject();
-                    writer.WritePropertyName(reader.LocalName.Substring(0,1).ToLower() + reader.LocalName.Substring(1).Replace("-",""));
+                    writer.WritePropertyName(reader.LocalName.Substring(0, 1).ToLower() + reader.LocalName.Substring(1).Replace("-", ""));
                 }
                 else
                 {
@@ -341,8 +344,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                     writer.WriteValue(root);
                     started = true;
                 }
-               
-                
+
+
 
                 if (reader.LocalName == "Containers" || reader.LocalName == "Blobs")
                 {
@@ -350,12 +353,12 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                 }
                 else if (reader.HasAttributes)
                 {
-                    if(!started)
+                    if (!started)
                     {
                         writer.WriteStartObject();
                         started = true;
                     }
-                    
+
                     while (reader.MoveToNextAttribute())
                     {
                         writer.WritePropertyName(reader.Name);
@@ -397,25 +400,26 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                 reader.Read();//skip end of a value
             }
 
-           
+
         }
-        private async Task ForwardDefaultResponseStreamAsync(IOwinContext context, Stream stream, ResourceContext resourceContext, Func<XElement,bool> listFilter)
+        private async Task ForwardDefaultResponseStreamAsync(IOwinContext context, Stream stream, ResourceContext resourceContext, Func<XElement, bool> listFilter)
         {
-            if (context.Request.Accept.IsPresent() && context.Request.Accept.IndexOf(Constants.ContentTypes.Json,StringComparison.OrdinalIgnoreCase) > -1)
+            if (context.Request.Accept.IsPresent() && context.Request.Accept.IndexOf(Constants.ContentTypes.Json, StringComparison.OrdinalIgnoreCase) > -1)
             {
                 context.Response.ContentType = Constants.ContentTypes.Json;
                 if (resourceContext.Action == Constants.Actions.ListBlobs)
                 {
-                    await WriteJsonAsync(stream, context.Response.Body,null,listFilter, "Blob","BlobPrefix");
+                    await WriteJsonAsync(stream, context.Response.Body, null, listFilter, "Blob", "BlobPrefix");
                     return;
-                }else if(resourceContext.Action == Constants.Actions.ListResources)
+                }
+                else if (resourceContext.Action == Constants.Actions.ListResources)
                 {
-                    await WriteJsonAsync(stream, context.Response.Body, (s)=> s.Substring(resourceContext.Route.ContainerName.Length+1),listFilter,"Container");
+                    await WriteJsonAsync(stream, context.Response.Body, (s) => s.Substring(resourceContext.Route.ContainerName.Length + 1), listFilter, "Container");
                     return;
                 }
 
             }
-           
+
 
             {
                 byte[] buffer = new byte[81920];
@@ -429,22 +433,54 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                 await context.Response.Body.FlushAsync();
             }
         }
-
+      //  static List<string> list = new List<string>();
         protected virtual async Task ForwardIncomingRequestStreamAsync(IOwinContext context, HttpWebRequest request)
         {
+          //  Trace.TraceInformation("Forward: {0},{1}", context.Request.GetHashCode(), context.Request.Body.GetHashCode());
+          
+            request.KeepAlive = false;
             if (request.ContentLength > 0)
             {
-                using (var stream = await request.GetRequestStreamAsync())
-                {
-                    byte[] buffer = new byte[81920];
-                    int count;
-                    while ((count = await context.Request.Body.ReadAsync(buffer, 0, buffer.Length, context.Request.CallCancelled)) != 0)
-                    {
-                        context.Request.CallCancelled.ThrowIfCancellationRequested();
+              //  var counter = 0;
+              //  var id = Guid.NewGuid();
+             //   try
+              //  {
+                   
 
-                        await stream.WriteAsync(buffer, 0, count, context.Request.CallCancelled);
+                    using(var stream = await request.GetRequestStreamAsync())
+                    {
+                      //  try
+                       // {
+                     //       Trace.TraceInformation("{0} - Request Info: {1}/{2}", id,context.Request.Headers.Get("content-length"), context.Request.Body.Length);
+                            byte[] buffer = new byte[81920];
+                            int count;
+                            while ((count = await context.Request.Body.ReadAsync(buffer, 0, buffer.Length, context.Request.CallCancelled)) != 0)
+                            {
+                        //        counter += count;
+                          //      Trace.TraceInformation("{0}: {1}/{2}", id, counter, request.ContentLength);
+                                context.Request.CallCancelled.ThrowIfCancellationRequested();
+
+                                await stream.WriteAsync(buffer, 0, count, context.Request.CallCancelled);
+                            }
+                            await stream.FlushAsync();
+                         //   
+
+                      //      Trace.TraceInformation("{2} - Done: {0}/{1}", counter, request.ContentLength,id);
+
+
+                       // }
+                        //catch (Exception ex)
+                       // {
+                   //         Trace.TraceInformation("{3} - Inner: {0}/{1} , {2}", counter, request.ContentLength, ex,id);
+                      //      throw;
+                     //   }
                     }
-                }
+             //   }
+             //   catch (Exception ex)
+              //  {
+                 //   Trace.TraceInformation("{3} - Outer: {0}/{1} , {2}", counter, request.ContentLength, ex,id);
+              //      throw;
+                //}
             }
         }
 
