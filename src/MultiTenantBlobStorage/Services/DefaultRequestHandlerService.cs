@@ -18,6 +18,7 @@ using System.Threading;
 using SInnovations.Azure.MultiTenantBlobStorage.Services.RequestHandlers;
 using System.Globalization;
 using System.Xml;
+using System.Diagnostics;
 namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 {
     
@@ -61,43 +62,44 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
         }
 
 
-        public Task HandleAsync(IOwinContext context, ResourceContext resourceContext)
+        public async Task HandleAsync(IOwinContext context, ResourceContext resourceContext)
         {
             var requestOption = new RequestOptions(context.Request);
             
             
             
+            
             if( resourceContext.Action.EndsWith("delete") && Options.DeleteOptions.SetMetaDataOnDelete != null)
             {
-                return SetMetaDataOnDeleteAsync(context, resourceContext);
-              
+                await SetMetaDataOnDeleteAsync(context, resourceContext);
+                return;
             }
-            //switch (resourceContext.Action)
-            //{
-            //    case :
-
-                 //   break;
-
-
-            //    case Constants.Actions.ListBlobs:
-            //        IListBlobsHandler listBlobs = context.ResolveDependency<IListBlobsHandler>();
-
-            //        if(listBlobs.ImplementsHandleRequest)
-            //        {
-            //            Logger.Info("Using BlobList Provider");
-            //            return listBlobs.HandleRequest(context, resourceContext, requestOption);
-
-            //        }else if (listBlobs.ImplementsRequestTransformer)
-            //        {
-            //            return ExecuteAsync(context, resourceContext, listBlobs.Transformer, requestOption);
-            //        }
-            //        break;
-         //   }
-
-
-            return ExecuteAsync(context, resourceContext);
             
+            // Handle Request, either override by handlers or default
+            var handlers = context.ResolveDependency<IRequestHandler[]>();
+            var tasks = handlers.Select(h => h.CanHandleRequestAsync(context, resourceContext)).ToArray();
+            Task.WaitAll(tasks);
+            handlers = handlers.Where((h, i) => !tasks[i].IsFaulted && !tasks[i].IsCanceled && tasks[i].Result).ToArray();
+           
+            if(handlers.Any())
+            {
+                var handler = handlers.Single();
 
+                if (await handler.OnBeforeHandleRequestAsync(context, resourceContext))
+                    return;
+
+            }
+
+            await ExecuteAsync(context, resourceContext);
+
+            if (handlers.Any())
+            {
+                var handler = handlers.Single();
+
+                await handler.OnAfterHandleRequestAsync(context, resourceContext);
+                  
+
+            }
            
         }
         private async Task SetMetaDataOnDeleteAsync(IOwinContext context, ResourceContext resourceContext)
@@ -223,6 +225,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
         }
         private async Task ExecuteAsync<T>(IOwinContext context, ResourceContext resourceContext, Func<Stream, Stream, T, Task> provider = null, T options = null) where T : RequestOptions
         {
+           
             var request = BuildDefaultBlobStorageRequest(context, resourceContext);
             Logger.LogRequest(request);
             var blobAuthenticationService = context.ResolveDependency<IStorageAccountResolverService>();
@@ -232,7 +235,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 
             using (HttpWebResponse response = await GetResponseAsync(request))
             {
-
+               
                 context.Response.ReasonPhrase = response.StatusDescription;
                 context.Response.StatusCode = (int)response.StatusCode;
 

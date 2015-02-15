@@ -10,13 +10,14 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
+using SInnovations.Azure.MultiTenantBlobStorage.Extensions;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.Services.RequestHandlers.Default
 {
-    public class DefaultListBlobsHandler : IListBlobsHandler
+    public class ListZipFileContentRequestHandler : IRequestHandler
     {
         protected ListBlobOptions Options { get; set; }
-        public DefaultListBlobsHandler(MultiTenantBlobStorageOptions options)
+        public ListZipFileContentRequestHandler(MultiTenantBlobStorageOptions options)
         {
             ImplementsRequestTransformer = options.ListBlobOptions.BlobListFilter != null;
             ImplementsHandleRequest = options.ListBlobOptions.BlobListProvider != null;
@@ -241,6 +242,33 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.RequestHandlers.Def
             var writer = XmlWriter.Create(context.Response.Body);
            // writer.
 
+        }
+
+
+        public Task<bool> CanHandleRequestAsync(Microsoft.Owin.IOwinContext context, ResourceContext resourceContext)
+        {
+            return Task.FromResult(resourceContext.Action == Constants.Actions.ListBlobs && context.Request.Query["zip"].IsPresent());
+        }
+
+
+        public Task<bool> OnBeforeHandleRequestAsync(Microsoft.Owin.IOwinContext context, ResourceContext resourceContext)
+        {
+            var prefix = context.Request.Query["prefix"];
+            var storage = context.ResolveDependency<IStorageAccountResolverService>().GetStorageAccount(resourceContext.Route);
+            var zipIndex = prefix.IndexOf(".zip");
+           
+            
+            storage.CreateCloudBlobClient().GetContainerReference(resourceContext.Route.ContainerName).GetBlockBlobReference(prefix.Substring(0,zipIndex));
+
+            return Task.FromResult(true);
+        }
+
+
+     
+
+        public Task OnAfterHandleRequestAsync(Microsoft.Owin.IOwinContext context, ResourceContext resourceContext)
+        {
+            throw new NotImplementedException();
         }
     }
 }

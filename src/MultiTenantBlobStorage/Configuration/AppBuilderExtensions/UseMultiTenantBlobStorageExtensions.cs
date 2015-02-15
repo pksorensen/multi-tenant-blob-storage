@@ -46,11 +46,15 @@ namespace Owin
 
             container.RegisterDefaultType<ITenantContainerNameService, DefaultTenantContainerNameService>(fact.TenantContainerNameService);
             container.RegisterDefaultType<IStorageAccountResolverService, DefaultStorageAccountResolverService>(fact.StorageAccountResolver);
-            
+            container.RegisterDefaultType<IResourceAuthorizationManager, DefaultResourceAuthorizationManager>(fact.AuthorizationManager);
+
+            foreach (var registration in fact.Registrations)
+                container.Register(registration);
+
             container.RegisterType<IRequestTenantResolver, DefaultRequestTenantResolver>();
-            container.RegisterType<IResourceAuthorizationManager, DefaultResourceAuthorizationManager>();
+           
             container.RegisterType<IRequestHandlerService, DefaultRequestHandlerService>();
-            container.RegisterType<IListBlobsHandler, DefaultListBlobsHandler>();
+          
             
 
             app.UseResourceAuthorization(new ResourceAuthorizationMiddlewareOptions
@@ -87,29 +91,27 @@ namespace Owin
 
             return app;
         }
-        private static void RegisterDefaultType<T, TDefault>(this IUnityContainer container, Registration<T> registration, string name = null)
+        private static void RegisterDefaultType<T, TDefault>(this IUnityContainer container, Registration<T> registration)
             where T : class
             where TDefault : T
         {
+           
             if (registration != null)
             {
-                container.Register(registration, name);
+                container.Register(registration);
             }
             else
             {
-                if (name == null)
-                {
+                
                     container.RegisterType<T, TDefault>(new HierarchicalLifetimeManager());
-                }
-                else
-                {
-                    container.RegisterType<T, TDefault>(name, new HierarchicalLifetimeManager());
-                }
+                
             }
         }
 
-        private static void Register(this IUnityContainer container, Registration registration, string name = null)
+        private static void Register(this IUnityContainer container, Registration registration)
+            
         {
+            var name = registration.Name;
             if (registration.Instance != null)
             {
                 var reg = container.RegisterInstance(registration.Instance);
@@ -132,7 +134,7 @@ namespace Owin
                 }
                 else
                 {
-                    container.RegisterType(registration.Type,registration.DependencyType,new HierarchicalLifetimeManager());
+                    container.RegisterType( registration.DependencyType,registration.Type,new HierarchicalLifetimeManager());
                 }
             }
             else if (registration.Factory != null)

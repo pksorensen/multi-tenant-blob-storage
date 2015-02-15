@@ -2,6 +2,7 @@
 using Microsoft.WindowsAzure.Storage.Blob;
 using SInnovations.Azure.MultiTenantBlobStorage.Logging;
 using SInnovations.Azure.MultiTenantBlobStorage.Notifications;
+using SInnovations.Azure.MultiTenantBlobStorage.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,11 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
         public string Name {get;set;}
         public IDictionary<string, string> Properties { get; set; }
         public IDictionary<string, string> MetaData { get; set; }
+    }
+   
+    public class AddResourceOptions
+    {
+        public Action<TenantRoute> OnAdded { get; set; }
     }
     public class ListBlobOptions
     {
@@ -40,6 +46,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
             Notifications = new AzureMultiTenantStorageNotifications();
             ListBlobOptions = new ListBlobOptions();
             DeleteOptions = new DeleteOptions();
+            AddOptions = new AddResourceOptions();
 
           //  var blob = new CloudBlockBlob(new Uri(""));
            //var a = new BlobProperties() { BlobType = "aa"}; 
@@ -68,7 +75,9 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
 
         public ListBlobOptions ListBlobOptions { get; set; }
 
-        public DeleteOptions DeleteOptions { get; set; } 
+        public DeleteOptions DeleteOptions { get; set; }
+
+        public AddResourceOptions AddOptions { get; set; }
 
         public CloudStorageAccount DefaultStorageAccount { get; set; }
     }

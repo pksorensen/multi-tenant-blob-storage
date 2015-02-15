@@ -46,7 +46,7 @@ namespace ConsoleTestApplication
 
                 var service = new CloudBlobClient(new Uri(localhost + Constants.OwinDefaultMapping + string.Format("/{0}/", new Guid())));
 
-              var a =  service.ListContainers().ToList();
+                var a =  service.ListContainers().ToList();
 
                 // var msg = new HttpClient().GetAsync(workset.Uri.AbsoluteUri).GetAwaiter().GetResult();
                 // Console.WriteLine(msg.Content.ReadAsStringAsync().GetAwaiter().GetResult());

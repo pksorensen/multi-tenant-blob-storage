@@ -17,6 +17,7 @@ using System.Xml;
 using StorageConstants = Microsoft.WindowsAzure.Storage.Shared.Protocol.Constants;
 using System.Xml.Linq;
 using Newtonsoft.Json;
+using System.Diagnostics;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
 {
@@ -60,7 +61,10 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
         public async Task Invoke(IDictionary<string, object> env)
         {
             Context = new OwinContext(env);
-            
+            Context.Response.OnSendingHeaders((obj) =>
+            {
+                Trace.WriteLine("SENDING HEADERS");
+            }, null);
 
             Options = Context.ResolveDependency<MultiTenantBlobStorageOptions>();
             var requestHandler = Context.ResolveDependency<IRequestHandlerService>();
@@ -69,8 +73,14 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
 
             ResourceContext.User = await requestHandler.AuthenticateRequestAsync(Context.Request, Options) ?? new ClaimsPrincipal();
             ResourceContext.Route = await requestHandler.ParseRouteDataAsync(Context.Request, Options);
-            ResourceContext.Action = string.Format("{0}_{1}", ResourceContext.Route.Path.IsMissing() ? (ResourceContext.Route.Resource.IsMissing()?Constants.Actions.TenantPrefix: Constants.Actions.ContainerPrefix) : Constants.Actions.BlobPrefix, Context.Request.Method.ToLower());
+            ResourceContext.Action = string.Format("{0}_{1}{2}", 
+                ResourceContext.Route.Path.IsMissing() ? (ResourceContext.Route.Resource.IsMissing()?Constants.Actions.TenantPrefix: Constants.Actions.ContainerPrefix) : Constants.Actions.BlobPrefix,
+                Context.Request.Method.ToLower(),
+                Context.Request.Query["comp"].IsPresent() ? "_"+Context.Request.Query["comp"]:"");
+
      
+            
+
             if (await Context.CheckAccessAsync(ResourceContext.ResourceAuthorizationContext))
             {
 

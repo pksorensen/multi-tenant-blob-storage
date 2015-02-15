@@ -9,7 +9,13 @@ using System.Threading.Tasks;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.Services.RequestHandlers
 {
-    public interface IRequestHandler<T> where T : RequestOptions
+    public interface IRequestHandler
+    {
+        Task<bool> CanHandleRequestAsync(IOwinContext context, ResourceContext resourceContext);
+        Task<Boolean> OnBeforeHandleRequestAsync(IOwinContext context, ResourceContext resourceContext);
+        Task OnAfterHandleRequestAsync(IOwinContext context, ResourceContext resourceContext);
+    }
+    public interface IRequestHandler<T> : IRequestHandler where T : RequestOptions
     {
         bool ImplementsRequestTransformer { get; }
         bool ImplementsHandleRequest { get; }
@@ -17,5 +23,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.RequestHandlers
         Task Transformer(Stream incoming, Stream outgoing, T options);
 
         Task HandleRequest(IOwinContext context, ResourceContext resourceContext, T options);
+
+       
     }
 }

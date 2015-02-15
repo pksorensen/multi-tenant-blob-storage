@@ -11,14 +11,15 @@ namespace SInnovations.Azure.MultiTenantBlobStorage
         public static class Actions
         {
             public const string TenantPrefix = "tenant";
-            public const string ListResources = TenantPrefix + "_get";
+            public const string ListResources = TenantPrefix + "_get_list";
             public const string ContainerPrefix = "container";
-            public const string ListBlobs   = ContainerPrefix+"_get";
+            public const string ListBlobs   = ContainerPrefix+"_get_list";
             public const string ContainerExists = ContainerPrefix + "_head";
             public const string ContainerCreate = ContainerPrefix + "_put";
             public const string ContainerDelete = ContainerPrefix + "_delete";
             public const string BlobPrefix = "blob";
             public const string BlobPut = BlobPrefix + "_put";
+            public const string PutBlockList = BlobPut + "_blocklist";
         }
         public static class ContentTypes
         {
