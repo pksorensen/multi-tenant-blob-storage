@@ -44,7 +44,7 @@ namespace Host
                     ListBlobOptions = new ListBlobOptions
                     {
                        
-                        BlobListFilter = (x) =>
+                        BlobListFilter = (x,state) =>
                        {
                            Console.WriteLine(x.ToString());
                            Console.WriteLine(x.Element("Properties").Element("BlobType").Value);

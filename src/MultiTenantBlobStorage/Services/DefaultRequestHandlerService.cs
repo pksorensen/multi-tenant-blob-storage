@@ -257,7 +257,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 
                         if (provider == null)
                         {
-                            await ForwardDefaultResponseStreamAsync(context, stream, resourceContext, Options.ListBlobOptions.BlobListFilter);
+                            await ForwardDefaultResponseStreamAsync(context, stream, resourceContext);
                         }
                         else
                         {
@@ -280,7 +280,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                 WriteJsonElement(reader, writer, root);
             }
         }
-        private async Task WriteJsonAsync(Stream incoming, Stream outgoing, Func<string, string> tenantNameTransform, Func<XElement, bool> listFilter, params string[] parseInfo)
+        private async Task WriteJsonAsync(Stream incoming, Stream outgoing, Func<string, string> tenantNameTransform, ListOptions listOptions, params string[] parseInfo)
         {
             XmlReaderSettings readerSettings = new XmlReaderSettings();
             readerSettings.IgnoreWhitespace = false;
@@ -290,6 +290,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
             var jsonWriter = new JsonTextWriter(new StreamWriter(outgoing));
             // jsonWriter.WriteStartObject();
             //  var serializer = JsonSerializer.CreateDefault();
+
+            var state = listOptions.StateInitializer == null ? null : listOptions.StateInitializer();
             while (await reader.ReadAsync())
             {
                 if (parseInfo.Any(a => a == reader.Name))
@@ -301,7 +303,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                         var node = XNode.ReadFrom(reader);
                         var el = (XElement)node;
 
-                        if (listFilter == null || listFilter(el))
+                        if (listOptions.BlobListFilter == null || listOptions.BlobListFilter(el, state))
                         {
                             var nameEl = el.Element("Name");
 
@@ -314,6 +316,13 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                             writeJson(jsonWriter, node.CreateReader(), name);
                         }
                         //serializer.Serialize(jsonWriter, node);
+                    }
+                    if(listOptions.BlobListFilterFinalizer != null)
+                    {
+                        foreach(var el in listOptions.BlobListFilterFinalizer(state))
+                        {
+                            writeJson(jsonWriter, el.CreateReader(), el.Name.LocalName);
+                        }
                     }
                     //   jsonWriter.WriteEndArray();
 
@@ -402,19 +411,19 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 
 
         }
-        private async Task ForwardDefaultResponseStreamAsync(IOwinContext context, Stream stream, ResourceContext resourceContext, Func<XElement, bool> listFilter)
+        private async Task ForwardDefaultResponseStreamAsync(IOwinContext context, Stream stream, ResourceContext resourceContext)
         {
             if (context.Request.Accept.IsPresent() && context.Request.Accept.IndexOf(Constants.ContentTypes.Json, StringComparison.OrdinalIgnoreCase) > -1)
             {
                 context.Response.ContentType = Constants.ContentTypes.Json;
                 if (resourceContext.Action == Constants.Actions.ListBlobs)
                 {
-                    await WriteJsonAsync(stream, context.Response.Body, null, listFilter, "Blob", "BlobPrefix");
+                    await WriteJsonAsync(stream, context.Response.Body, null, Options.ListBlobOptions, "Blob", "BlobPrefix");
                     return;
                 }
                 else if (resourceContext.Action == Constants.Actions.ListResources)
                 {
-                    await WriteJsonAsync(stream, context.Response.Body, (s) => s.Substring(resourceContext.Route.ContainerName.Length + 1), listFilter, "Container");
+                    await WriteJsonAsync(stream, context.Response.Body, (s) => s.Substring(resourceContext.Route.ContainerName.Length + 1), Options.ListBlobOptions, "Container");
                     return;
                 }
 
@@ -438,7 +447,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
         {
           //  Trace.TraceInformation("Forward: {0},{1}", context.Request.GetHashCode(), context.Request.Body.GetHashCode());
           
-            request.KeepAlive = false;
+            
             if (request.ContentLength > 0)
             {
               //  var counter = 0;

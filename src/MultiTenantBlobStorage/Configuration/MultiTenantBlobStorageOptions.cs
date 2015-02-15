@@ -23,17 +23,21 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
     {
         public Action<TenantRoute> OnAdded { get; set; }
     }
-    public class ListBlobOptions
+    
+    public class ListOptions
+    {    
+
+        public Func<XElement, object, bool> BlobListFilter { get; set; }
+
+        public Func<object, IEnumerable<XElement>> BlobListFilterFinalizer { get; set; }
+        public Func<object> StateInitializer { get; set; }
+
+    }
+    public class ListBlobOptions : ListOptions
     {
-        /// <summary>
-        /// Function is invoked on all blobs returned 
-        /// </summary>
-        public Func<XElement, bool> BlobListFilter { get; set; }
 
+      
 
-        public Func<Task<IEnumerable<Blob>>> BlobListProvider { get; set; }
-
-       // public 
     }
     public class MultiTenantBlobStorageOptions
     {
