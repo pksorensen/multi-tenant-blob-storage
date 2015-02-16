@@ -230,8 +230,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
             var blobAuthenticationService = context.ResolveDependency<IStorageAccountResolverService>();
             await blobAuthenticationService.SignRequestAsync(request, resourceContext.Route);
 
-            await Task.Delay(2500);
-
+          
 
 
             await ForwardIncomingRequestStreamAsync(context, request);
