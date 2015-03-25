@@ -18,6 +18,7 @@ using StorageConstants = Microsoft.WindowsAzure.Storage.Shared.Protocol.Constant
 using System.Xml.Linq;
 using Newtonsoft.Json;
 using System.Diagnostics;
+using System.Security.Cryptography;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
 {
@@ -72,13 +73,51 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
 
          //   requestHandler.ListBlobsStreamingTransform = TestStreamTransform;
 
-            resourceContext.User = await requestHandler.AuthenticateRequestAsync(context.Request, options) ?? new ClaimsPrincipal();
+            resourceContext.User = context.Authentication.User = await requestHandler.AuthenticateRequestAsync(context.Request, options) ?? new ClaimsPrincipal();
             resourceContext.Route = await requestHandler.ParseRouteDataAsync(context.Request, options);
             resourceContext.Action = string.Format("{0}_{1}{2}",
                 resourceContext.Route.Path.IsMissing() ? (resourceContext.Route.Resource.IsMissing() ? Constants.Actions.TenantPrefix : Constants.Actions.ContainerPrefix) : Constants.Actions.BlobPrefix,
                 context.Request.Method.ToLower(),
                 context.Request.Query["comp"].IsPresent() ? "_" + context.Request.Query["comp"] : "");
 
+            if(!resourceContext.User.Identities.Any())
+            {
+        
+                var sig = context.Request.Query["s"];
+                var expire = context.Request.Query["e"];
+                var ac = context.Request.Query["ac"];
+                var a = context.Request.Query["a"];
+
+                if(!(string.IsNullOrWhiteSpace(sig) || string.IsNullOrWhiteSpace(expire)))
+                {
+                    var account = context.ResolveDependency<IStorageAccountResolverService>().GetStorageAccount(resourceContext.Route);
+
+                    string signature = "";
+                    using (HMACSHA256 hmacSha256 = new HMACSHA256(Convert.FromBase64String(account.Credentials.ExportBase64EncodedKey())))
+                    {
+                        var sb = new StringBuilder();
+                        sb.AppendLine(ac);
+                        sb.AppendLine(resourceContext.Route.TenantId);
+                        sb.AppendLine(resourceContext.Route.Resource);
+                        if (a == "b")
+                        {
+                            sb.AppendLine(resourceContext.Route.Path);
+                        }
+                        sb.AppendLine(expire);
+
+
+                        Byte[] dataToHmac = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+                        signature = Convert.ToBase64String(hmacSha256.ComputeHash(dataToHmac));
+                        if (sig == signature)
+                        {
+                            resourceContext.User = context.Authentication.User = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]{ new Claim("signature",signature)},"signature"));
+
+                        }
+
+                    }
+                }
+
+            }
 
 
 

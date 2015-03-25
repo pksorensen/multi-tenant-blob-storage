@@ -51,8 +51,7 @@ namespace Owin
             foreach (var registration in fact.Registrations)
                 container.Register(registration);
 
-            container.RegisterType<IRequestTenantResolver, DefaultRequestTenantResolver>();
-           
+            container.RegisterType<IRequestTenantResolver, DefaultRequestTenantResolver>();           
             container.RegisterType<IRequestHandlerService, DefaultRequestHandlerService>();
           
             

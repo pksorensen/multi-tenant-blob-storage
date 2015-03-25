@@ -67,6 +67,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
             var requestOption = new RequestOptions(context.Request);
 
             
+            
 
             if (resourceContext.Action.EndsWith("delete") && Options.DeleteOptions.SetMetaDataOnDelete != null)
             {

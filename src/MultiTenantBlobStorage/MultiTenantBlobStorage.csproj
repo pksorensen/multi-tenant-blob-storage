@@ -133,6 +133,7 @@
     <Compile Include="Services\IRequestTenantResolver.cs" />
     <Compile Include="Services\IStorageAccountResolverService.cs" />
     <Compile Include="Services\ITenantContainerNameService.cs" />
+    <Compile Include="Services\RequestHandlers\Default\CompSasTokenHandler.cs" />
     <Compile Include="Services\RequestHandlers\Default\DefaultListBlobsHandler.cs" />
     <Compile Include="Services\RequestHandlers\Default\OnAddHandler.cs" />
     <Compile Include="Services\RequestHandlers\IListBlobsHandler.cs" />

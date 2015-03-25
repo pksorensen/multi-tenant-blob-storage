@@ -20,10 +20,10 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
         {
             var context = new OwinContext(env);
 
-            if (context.Request.Uri.Scheme != Uri.UriSchemeHttps)
+            if (context.Request.Headers.ContainsKey("authorization") &&  context.Request.Uri.Scheme != Uri.UriSchemeHttps)
             {
                 context.Response.StatusCode = 403;
-                context.Response.ReasonPhrase = "ssl is requried";
+                context.Response.ReasonPhrase = "ssl is requried when using authorization header";
 
                 await context.Response.WriteAsync(context.Response.ReasonPhrase);
 

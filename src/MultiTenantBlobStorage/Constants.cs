@@ -17,9 +17,11 @@ namespace SInnovations.Azure.MultiTenantBlobStorage
             public const string ContainerExists = ContainerPrefix + "_head";
             public const string ContainerCreate = ContainerPrefix + "_put";
             public const string ContainerDelete = ContainerPrefix + "_delete";
+            public const string ContainerGet = ContainerPrefix + "_get";
             public const string BlobPrefix = "blob";
             public const string BlobPut = BlobPrefix + "_put";
             public const string PutBlockList = BlobPut + "_blocklist";
+            public const string BlobGet = BlobPrefix + "_get";
         }
         public static class ContentTypes
         {
