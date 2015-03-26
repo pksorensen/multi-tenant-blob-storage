@@ -19,6 +19,7 @@ using System.Xml.Linq;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.Security.Cryptography;
+using System.Globalization;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
 {
@@ -87,7 +88,9 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
                 var expire = context.Request.Query["e"];
                 var ac = context.Request.Query["ac"];
                 var a = context.Request.Query["a"];
-
+                var expireTIme = DateTimeOffset.Parse(expire);
+                String dateInRfc1123Format = expireTIme.ToString("R", CultureInfo.InvariantCulture);
+                
                 if(!(string.IsNullOrWhiteSpace(sig) || string.IsNullOrWhiteSpace(expire)))
                 {
                     var account = context.ResolveDependency<IStorageAccountResolverService>().GetStorageAccount(resourceContext.Route);
@@ -103,7 +106,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
                         {
                             sb.AppendLine(resourceContext.Route.Path);
                         }
-                        sb.AppendLine(expire);
+                        sb.AppendLine(dateInRfc1123Format);
 
 
                         Byte[] dataToHmac = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
