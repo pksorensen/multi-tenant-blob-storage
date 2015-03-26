@@ -68,8 +68,6 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Extensions
                 case Constants.HeaderConstants.Range:
                    
                     foreach(var value in values){
-
-
                         var matches = _rangeregex.Match(value);
                         
                         foreach(Capture capture in matches.Captures)

@@ -63,7 +63,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.RequestHandlers.Def
                
             }
 
-            var sas = string.Format("?s={0}&e={1}&ac={2}&a={3}", signature, Uri.EscapeDataString( expireTIme.ToString("o")), ac, !string.IsNullOrWhiteSpace(resourceContext.Route.Path) ? "b" : "c");
+            var sas = string.Format("?s={0}&e={1}&ac={2}&a={3}", Uri.EscapeDataString(signature), Uri.EscapeDataString( expireTIme.ToString("o")), ac, !string.IsNullOrWhiteSpace(resourceContext.Route.Path) ? "b" : "c");
 
           
             //if(!string.IsNullOrWhiteSpace( resourceContext.Route.Path))
