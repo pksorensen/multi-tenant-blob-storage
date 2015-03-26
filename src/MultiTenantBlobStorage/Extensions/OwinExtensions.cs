@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Thinktecture.IdentityModel.Owin.ResourceAuthorization;
 
@@ -13,6 +14,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Extensions
 {
     public static class OwinExtensions
     {
+        static Regex _rangeregex = new Regex(@"^bytes=\d*-\d*(,\d*-\d*)*$",RegexOptions.Compiled);
         static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
         public static IList<string> UserAgent(this IHeaderDictionary headers)
         {
@@ -64,8 +66,31 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Extensions
                     request.Referer = string.Join(", ", values);
                     return;
                 case Constants.HeaderConstants.Range:
-                   foreach(var value in values){
-                       request.AddRange(int.Parse(value));
+                   
+                    foreach(var value in values){
+
+
+                        var matches = _rangeregex.Match(value);
+                        
+                        foreach(Capture capture in matches.Captures)
+                        {
+                            var captureValue = capture.Value;
+                            if(captureValue.IsPresent()){
+                                var range = captureValue.Substring(6);
+                                var rangeParts = range.Split('-');
+                                if(rangeParts.Length==1)
+                                {
+                                    request.AddRange(long.Parse(rangeParts[0]));
+                                }else if(rangeParts.Length ==2)
+                                {
+                                    request.AddRange(long.Parse(rangeParts[0]), long.Parse(rangeParts[1]));
+                                }
+                               
+                            }
+                            
+                        }
+
+                       //request.AddRange(int.Parse(value));
                    }
                    
                     return;

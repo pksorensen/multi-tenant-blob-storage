@@ -81,17 +81,40 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
                 context.Request.Method.ToLower(),
                 context.Request.Query["comp"].IsPresent() ? "_" + context.Request.Query["comp"] : "");
 
-            if(!resourceContext.User.Identities.Any())
+           
+
+
+
+            if ( CheckForSasUri(context, resourceContext) || await context.CheckAccessAsync(resourceContext.ResourceAuthorizationContext))
             {
-        
+
+                await requestHandler.HandleAsync(context, resourceContext);
+
+            }
+            else
+            {
+
+                HandleUnauthorizedRequest( context, resourceContext.ResourceAuthorizationContext);
+            }
+
+            context.Response.Body.Flush();
+
+            //await _next(env);
+        }
+
+        private static bool CheckForSasUri(OwinContext context, ResourceContext resourceContext)
+        {
+            if (!resourceContext.User.Identities.Any())
+            {
+
                 var sig = context.Request.Query["s"];
                 var expire = context.Request.Query["e"];
                 var ac = context.Request.Query["ac"];
                 var a = context.Request.Query["a"];
                 var expireTIme = DateTimeOffset.Parse(expire);
                 String dateInRfc1123Format = expireTIme.ToString("R", CultureInfo.InvariantCulture);
-                
-                if(!(string.IsNullOrWhiteSpace(sig) || string.IsNullOrWhiteSpace(expire)))
+
+                if (!(string.IsNullOrWhiteSpace(sig) || string.IsNullOrWhiteSpace(expire)))
                 {
                     var account = context.ResolveDependency<IStorageAccountResolverService>().GetStorageAccount(resourceContext.Route);
 
@@ -113,33 +136,17 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
                         signature = Convert.ToBase64String(hmacSha256.ComputeHash(dataToHmac));
                         if (sig == signature)
                         {
-                            resourceContext.User = context.Authentication.User = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]{ new Claim("signature",signature)},"signature"));
-
+                            resourceContext.User = context.Authentication.User = new ClaimsPrincipal(new ClaimsIdentity(new Claim[] { new Claim("signature", signature) }, "signature"));
+                            return true;
                         }
 
                     }
                 }
 
             }
-
-
-
-            if (await context.CheckAccessAsync(resourceContext.ResourceAuthorizationContext))
-            {
-
-                await requestHandler.HandleAsync(context, resourceContext);
-
-            }
-            else
-            {
-
-                HandleUnauthorizedRequest( context, resourceContext.ResourceAuthorizationContext);
-            }
-
-            context.Response.Body.Flush();
-
-            //await _next(env);
+            return false;
         }
+       
        
 
 

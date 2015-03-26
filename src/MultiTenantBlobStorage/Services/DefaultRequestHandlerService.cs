@@ -168,6 +168,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
             req.Headers.CopyTo(Constants.HeaderConstants.UserAgent, request);
             req.Headers.CopyTo(Constants.HeaderConstants.ContentType, request, "application/xml");
             req.Headers.CopyTo(Constants.HeaderConstants.Date, request);
+            req.Headers.CopyTo(Constants.HeaderConstants.Range, request);
 
             foreach (var header in req.Headers.Keys.Where(k => k.StartsWith("x-ms")))
             {
