@@ -111,6 +111,10 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
                 var expire = context.Request.Query["e"];
                 var ac = context.Request.Query["ac"];
                 var a = context.Request.Query["a"];
+                
+                if (expire.IsMissing())
+                    return false;
+
                 var expireTIme = DateTimeOffset.Parse(expire, CultureInfo.InvariantCulture);
                 String dateInRfc1123Format = expireTIme.ToString("R", CultureInfo.InvariantCulture);
 

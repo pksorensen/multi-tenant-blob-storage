@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.Logging
 {
-    public static class LogRequestExtensions
+    internal static class LogRequestExtensions
     {
         public static void LogRequest(this ILog logger, WebRequest request)
         {
