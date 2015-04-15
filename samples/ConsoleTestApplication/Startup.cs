@@ -14,7 +14,7 @@ namespace Host
 {
     public class Startup
     {
-        //static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
+        static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
 
         public void Configuration(IAppBuilder app)
         {
@@ -22,19 +22,19 @@ namespace Host
 
             app.Map(Constants.OwinDefaultMapping, (builder) =>
             {
-                //builder.Use(async (ctx, next) =>
-                //{
+                builder.Use(async (ctx, next) =>
+                {
                     
                     
-                //    Logger.LogRequest(ctx.Request);
+                    Logger.LogRequest(ctx.Request);
                     
-                //    await next();
+                    await next();
 
-                //    Logger.LogResponse(ctx.Response);
+                    Logger.LogResponse(ctx.Response);
                    
 
 
-                //});
+                });
 
                 builder.UseMultiTenantBlobStorage(new MultiTenantBlobStorageOptions
                 {

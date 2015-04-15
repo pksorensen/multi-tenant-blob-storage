@@ -451,46 +451,46 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
             
             if (request.ContentLength > 0)
             {
-              //  var counter = 0;
-              //  var id = Guid.NewGuid();
-             //   try
-              //  {
+               // var counter = 0;
+               //var id = Guid.NewGuid();
+               // try
+               // {
                    
 
                     using(var stream = await request.GetRequestStreamAsync())
                     {
-                      //  try
-                       // {
-                     //       Trace.TraceInformation("{0} - Request Info: {1}/{2}", id,context.Request.Headers.Get("content-length"), context.Request.Body.Length);
+                        try
+                        {
+                          //  Trace.TraceInformation("{0} - Request Info: {1}/{2}", id,context.Request.Headers.Get("content-length"), context.Request.Body.Length);
                             byte[] buffer = new byte[81920];
                             int count;
                             while ((count = await context.Request.Body.ReadAsync(buffer, 0, buffer.Length, context.Request.CallCancelled)) != 0)
                             {
-                        //        counter += count;
-                          //      Trace.TraceInformation("{0}: {1}/{2}", id, counter, request.ContentLength);
+                            //    counter += count;
+                             //   Trace.TraceInformation("{0}: {1}/{2}", id, counter, request.ContentLength);
                                 context.Request.CallCancelled.ThrowIfCancellationRequested();
 
                                 await stream.WriteAsync(buffer, 0, count, context.Request.CallCancelled);
                             }
                             await stream.FlushAsync();
-                         //   
+                            
 
-                      //      Trace.TraceInformation("{2} - Done: {0}/{1}", counter, request.ContentLength,id);
+                            //Trace.TraceInformation("{2} - Done: {0}/{1}", counter, request.ContentLength,id);
 
 
-                       // }
-                        //catch (Exception ex)
-                       // {
-                   //         Trace.TraceInformation("{3} - Inner: {0}/{1} , {2}", counter, request.ContentLength, ex,id);
-                      //      throw;
-                     //   }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.ErrorException("Copy streams: ", ex);
+                            throw;
+                       }
                     }
-             //   }
-             //   catch (Exception ex)
-              //  {
-                 //   Trace.TraceInformation("{3} - Outer: {0}/{1} , {2}", counter, request.ContentLength, ex,id);
-              //      throw;
-                //}
+               // }
+               // catch (Exception ex)
+               //{
+               //     Trace.TraceInformation("{3} - Outer: {0}/{1} , {2}", counter, request.ContentLength, ex,id);
+               //    throw;
+               //}
             }
         }
 

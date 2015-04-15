@@ -32,7 +32,8 @@ namespace ConsoleTestApplication
         }
         static void Main(string[] args)
         {
-         
+          
+
             //var guid = Guid.NewGuid();
             LogProvider.SetCurrentLogProvider(new DiagnosticsTraceLogProvider());
             //Trace.Listeners.Add(new ConsoleTraceListener());
@@ -40,7 +41,8 @@ namespace ConsoleTestApplication
             var localhost = "http://localhost:46311";
             using (WebApp.Start<Startup>(localhost))
             {
-                Console.WriteLine("Started...");
+                Console.WriteLine("Started... http://localhost:46311");
+                Console.ReadKey();
                 var workset = new CloudBlobContainer(new Uri(localhost + Constants.OwinDefaultMapping + string.Format("/{0}/{1}", Guid.NewGuid(), "workset")));
                 var workset1 = new CloudBlobContainer(new Uri(localhost + Constants.OwinDefaultMapping + string.Format("/{0}/{1}", Guid.NewGuid(), "workset")));
 
