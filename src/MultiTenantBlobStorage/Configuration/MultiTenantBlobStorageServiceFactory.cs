@@ -18,6 +18,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
         public Registration<ITenantContainerNameService> TenantContainerNameService { get; set; }
         public Registration<IStorageAccountResolverService> StorageAccountResolver { get; set; }
         public Registration<IResourceAuthorizationManager> AuthorizationManager { get; set; }
+        public Registration<IAuthenticationService> AuthenticationService { get; set; } 
 
         public void RegisterHandler<T>(string name = null) where T : IRequestHandler
         {

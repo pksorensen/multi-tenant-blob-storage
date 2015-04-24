@@ -44,14 +44,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 
 
 
-        public virtual async Task<ClaimsPrincipal> AuthenticateRequestAsync(IOwinRequest request, MultiTenantBlobStorageOptions options)
-        {
-            var result = await request.Context.Authentication.AuthenticateAsync(options.AuthenticationType);
-            if (result == null)
-                return null;
-
-            return new ClaimsPrincipal(result.Identity);
-        }
+        
 
 
         public virtual async Task<TenantRoute> ParseRouteDataAsync(IOwinRequest request, MultiTenantBlobStorageOptions options)

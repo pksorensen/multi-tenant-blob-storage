@@ -187,6 +187,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Extensions
             return scope.Resolve<T>();
 
         }
+        
 
         public static async Task<bool> CheckAccessAsync(this IOwinContext context, ResourceAuthorizationContext authorizationContext)
         {

@@ -5,22 +5,22 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Multi Tenant Blob Storage Middleware")]
-[assembly: AssemblyDescription("An owin middleware to put between blob storage and users, for making companies able to create a sharable blobstorage between its users. ")]
+[assembly: AssemblyTitle("Multi Tenant Blob Storage Middleware SasToken Extension")]
+[assembly: AssemblyDescription("Extension Library for getting shared access signature support ")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("S-Innovations v/Poul Kjeldager Sørensen")]
-[assembly: AssemblyProduct("MultiTenantBlobStorage")]
+[assembly: AssemblyProduct("MultiTenantBlobStorage.SasTokenExtension")]
 [assembly: AssemblyCopyright("Copyright ©  2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-[assembly: InternalsVisibleTo("ConsoleTestApplication")]
+
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 
 // COM, set the ComVisible attribute to true on that type.
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("71f4c817-26c9-4e6e-ad34-7d3ff033ad8e")]
+[assembly: Guid("8c968128-7395-497c-86fa-eb658798c187")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -34,4 +34,3 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
-[assembly: AssemblyInformationalVersion("1.0.0")]

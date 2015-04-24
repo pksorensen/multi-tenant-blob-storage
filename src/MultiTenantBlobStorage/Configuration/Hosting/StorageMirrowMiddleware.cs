@@ -63,29 +63,30 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
         public async Task Invoke(IDictionary<string, object> env)
         {
             var context = new OwinContext(env);
-            var resourceContext = new ResourceContext();
+            
             context.Response.OnSendingHeaders((obj) =>
             {
                // Trace.WriteLine("SENDING HEADERS");
             }, null);
-
+            var resourceContext =context.ResolveDependency<ResourceContext>();
             var options = context.ResolveDependency<MultiTenantBlobStorageOptions>();
             var requestHandler = context.ResolveDependency<IRequestHandlerService>();
-
+          
+            
          //   requestHandler.ListBlobsStreamingTransform = TestStreamTransform;
 
-            resourceContext.User = context.Authentication.User = await requestHandler.AuthenticateRequestAsync(context.Request, options) ?? new ClaimsPrincipal();
             resourceContext.Route = await requestHandler.ParseRouteDataAsync(context.Request, options);
             resourceContext.Action = string.Format("{0}_{1}{2}",
                 resourceContext.Route.Path.IsMissing() ? (resourceContext.Route.Resource.IsMissing() ? Constants.Actions.TenantPrefix : Constants.Actions.ContainerPrefix) : Constants.Actions.BlobPrefix,
                 context.Request.Method.ToLower(),
                 context.Request.Query["comp"].IsPresent() ? "_" + context.Request.Query["comp"] : "");
-
            
 
+            var authService = context.ResolveDependency<IAuthenticationService>();
+            resourceContext.User = context.Authentication.User = await authService.AuthenticateRequestAsync(context.Request, options) ?? new ClaimsPrincipal();
+           
 
-
-            if ( CheckForSasUri(context, resourceContext) || await context.CheckAccessAsync(resourceContext.ResourceAuthorizationContext))
+            if ( authService.SkipAuthorizationManager(context, resourceContext) || await context.CheckAccessAsync(resourceContext.ResourceAuthorizationContext))
             {
 
                 await requestHandler.HandleAsync(context, resourceContext);
