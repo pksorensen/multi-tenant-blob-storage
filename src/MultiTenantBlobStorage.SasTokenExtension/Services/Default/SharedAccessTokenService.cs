@@ -125,31 +125,35 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
             using (HMACSHA256 hmacSha256 = new HMACSHA256(Convert.FromBase64String(keys.Primary)))
             {
 
-                var signature = Convert.ToBase64String(hmacSha256.ComputeHash(Encoding.UTF8.GetBytes(body)));
-
+                var signature = Base64UrlEncode(hmacSha256.ComputeHash(Encoding.UTF8.GetBytes(body)));
                 return string.Format("{0}.{1}", body, signature);
             }
+
         
         }
 
         private string GetStringProperty(IGrouping<string, Claim> arg)
         {
-            return string.Format("\"{0}\":\"{1}\"", arg.Key, GetStringValue(arg));
+            return string.Format("\"{0}\":{1}", arg.Key, GetValue(arg));
         }
 
-        private string GetStringValue(IGrouping<string, Claim> arg)
+        private string GetValue(IGrouping<string, Claim> arg)
         {
             if (arg.Skip(1).Any())
-                return string.Format("[{0}]", string.Join(",", arg.Select(a=>a.Value)));
-            return arg.First().Value;
+                return string.Format("[{0}]", string.Join(",", arg.Select(a=>string.Format("\"{0}\"", a.Value))));
+            return string.Format("\"{0}\"", arg.First().Value);
         }
         static readonly char[] padding = { '=' };
         public string Base64UrlEncode(string input)
         {
-            return System.Convert.ToBase64String(Encoding.UTF8.GetBytes(input))
-          .TrimEnd(padding).Replace('+', '-').Replace('/', '_'); 
-        }
+            return Base64UrlEncode(Encoding.UTF8.GetBytes(input));
 
+        }
+        public string Base64UrlEncode(byte[] input)
+        {
+            return System.Convert.ToBase64String(input)
+          .TrimEnd(padding).Replace('+', '-').Replace('/', '_');
+        }
        
     }
 }
