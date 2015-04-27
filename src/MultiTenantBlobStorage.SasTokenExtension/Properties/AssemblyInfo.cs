@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("Extension Library for getting shared access signature support ")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("S-Innovations v/Poul Kjeldager Sørensen")]
-[assembly: AssemblyProduct("MultiTenantBlobStorage.SasTokenExtension")]
+[assembly: AssemblyProduct("S-Innovations.Azure.MultiTenantBlobStorage.SasTokenExtension")]
 [assembly: AssemblyCopyright("Copyright ©  2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -34,3 +34,4 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyInformationalVersion("1.0.0")]

@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("An owin middleware to put between blob storage and users, for making companies able to create a sharable blobstorage between its users. ")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("S-Innovations v/Poul Kjeldager Sørensen")]
-[assembly: AssemblyProduct("MultiTenantBlobStorage")]
+[assembly: AssemblyProduct("S-Innovations.Azure.MultiTenantBlobStorage")]
 [assembly: AssemblyCopyright("Copyright ©  2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
