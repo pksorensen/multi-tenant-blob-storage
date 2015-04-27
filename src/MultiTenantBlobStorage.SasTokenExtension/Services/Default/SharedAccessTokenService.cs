@@ -57,17 +57,13 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
             var parts = token.Split('.');
             if (parts.Length != 3)
                 return Enumerable.Empty<Claim>();
+            
+            var body = GetBase64Value(parts[1]);           
+            var signature = GetBase64Value(parts[2]);
 
-            string incoming = parts[1]
-                .Replace('_', '/').Replace('-', '+');
-            switch (parts[1].Length % 4)
-            {
-                case 2: incoming += "=="; break;
-                case 3: incoming += "="; break;
-            }
-            byte[] bytes = Convert.FromBase64String(incoming);
+            byte[] bytes = Convert.FromBase64String(body);
             string originalText = Encoding.UTF8.GetString(bytes);
-            var claims = (JObject.Parse(originalText).Properties().Select(p => new Claim(p.Name, p.Value.ToString()))).ToArray();
+            var claims = (JObject.Parse(originalText).Properties().SelectMany(GetClaims)).ToArray();
 
             var keys = await _keyProvider.Value;
 
@@ -106,12 +102,30 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
             //return true;
         }
 
+        private static string GetBase64Value(string part)
+        {
+            var value = part.Replace('_', '/').Replace('-', '+');
+            switch (value.Length % 4)
+            {
+                case 2: value += "=="; break;
+                case 3: value += "="; break;
+            }
+            return value;
+        }
+
+        private IEnumerable<Claim> GetClaims(JProperty arg)
+        {
+            if (arg.Value.Type == JTokenType.Array)
+                return (arg.Value as JArray).Select(p => new Claim(arg.Name, p.ToString()));
+            return new Claim[] {new Claim(arg.Name, arg.Value.ToString())};
+        }
+
         private string CalculateSignature(string token, string key)
         {
             using (HMACSHA256 hmacSha256 = new HMACSHA256(Convert.FromBase64String(key)))
             {
 
-                return Convert.ToBase64String(hmacSha256.ComputeHash(Encoding.UTF8.GetBytes(token.Substring(0,token.LastIndexOf('.')))));
+                return Base64UrlEncode(hmacSha256.ComputeHash(Encoding.UTF8.GetBytes(token.Substring(0, token.LastIndexOf('.')))));
 
             }
         }
