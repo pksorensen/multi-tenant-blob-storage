@@ -29,7 +29,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Services.D
                 IEnumerable<Claim> claims = await _tokenService.CheckSignatureAsync(token);
                 if(claims.Any())
                 {
-                    var prefix = claims.First(c=>c.Type=="prefix").Value;
+                    var prefix = GetPrefixValue(claims);
                     var exp = claims.First(c=>c.Type=="exp");
                     var flag = resourceContext.Route.Path.StartsWith(prefix);
                     var expired = DateTimeOffset.UtcNow >= DateTimeOffset.Parse(exp.Value, CultureInfo.InvariantCulture);
@@ -39,6 +39,14 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Services.D
             }
 
             return false;
+        }
+
+        private static string GetPrefixValue(IEnumerable<Claim> claims)
+        {
+            var prefix = claims.FirstOrDefault(c => c.Type == "prefix");
+            if (prefix == null)
+                return "";
+            return prefix.Value;
         }
     }
 }

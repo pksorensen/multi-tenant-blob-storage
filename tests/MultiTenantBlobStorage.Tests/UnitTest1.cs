@@ -24,6 +24,8 @@ namespace MultiTenantBlobStorage.Tests
         [TestMethod]
         public async Task TestMethod1()
         {
+            var defaultvalue = default(Claim);
+
             var tokens = new SharedAccessTokenService( () => Task.FromResult(new KeyPair{ Primary= GetRandomKey(64), Secondary= GetRandomKey(64)}));
 
             var a = await tokens.GetTokenAsync(new List<Claim> { new Claim("exp", "dsadsa"), new Claim("exps", "fdfs"), new Claim("exsp", "sda"), new Claim("exsp", "das") });
