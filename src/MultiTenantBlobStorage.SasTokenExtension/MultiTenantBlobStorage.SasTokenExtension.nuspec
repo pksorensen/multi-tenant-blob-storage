@@ -12,7 +12,7 @@
     <copyright>Copyright 2014</copyright>
     <tags>S-Innovations</tags>
     <dependencies>
-      <dependency id="S-Innovations.Azure.MultiTenantBlobStorage" version="$version$" />
+      <dependency id="S-Innovations.Azure.MultiTenantBlobStorage"/>
     </dependencies>
   </metadata>
 </package>
