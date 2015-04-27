@@ -41,7 +41,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension
 
             var account = _storage.GetStorageAccount(resourceContext.Route);
             var claims = _tokenservice.GetClaimsForToken(context, resourceContext);
-            var token = string.Format("?token={0}", _tokenservice.GetToken(claims));
+            var token = string.Format("?token={0}", _tokenservice.GetTokenAsync(claims));
                       
 
             context.Response.StatusCode = 200;

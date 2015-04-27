@@ -19,22 +19,26 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Services.D
         {
             this._tokenService = tokenService;
         }
-        public override bool SkipAuthorizationManager(OwinContext context, ResourceContext resourceContext)
+        public override async Task<bool> SkipAuthorizationManagerAsync(OwinContext context, ResourceContext resourceContext)
         {
 
             var token = context.Request.Query["token"];
-            IEnumerable<Claim> claims;
-            if (!string.IsNullOrWhiteSpace(token) && _tokenService.CheckSignature(token,out claims))
+           
+            if (!string.IsNullOrWhiteSpace(token))
             {
-                var prefix = claims.First(c=>c.Type=="prefix").Value;
-                var exp = claims.First(c=>c.Type=="exp");
-                var flag = resourceContext.Route.Path.StartsWith(prefix);
-                var expired = DateTimeOffset.UtcNow >= DateTimeOffset.Parse(exp.Value, CultureInfo.InvariantCulture);
+                IEnumerable<Claim> claims = await _tokenService.CheckSignatureAsync(token);
+                if(claims.Any())
+                {
+                    var prefix = claims.First(c=>c.Type=="prefix").Value;
+                    var exp = claims.First(c=>c.Type=="exp");
+                    var flag = resourceContext.Route.Path.StartsWith(prefix);
+                    var expired = DateTimeOffset.UtcNow >= DateTimeOffset.Parse(exp.Value, CultureInfo.InvariantCulture);
 
-                return flag && !expired;
+                    return flag && !expired;
+                }
             }
 
-            return base.SkipAuthorizationManager(context,resourceContext);
+            return false;
         }
     }
 }

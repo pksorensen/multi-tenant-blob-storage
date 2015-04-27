@@ -4,6 +4,8 @@ using SInnovations.Azure.MultiTenantBlobStorage.Services.Default;
 using System.Security.Cryptography;
 using System.Collections.Generic;
 using System.Security.Claims;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace MultiTenantBlobStorage.Tests
 {
@@ -20,13 +22,13 @@ namespace MultiTenantBlobStorage.Tests
             }
         }
         [TestMethod]
-        public void TestMethod1()
+        public async Task TestMethod1()
         {
-            var tokens = new SharedAccessTokenService(GetRandomKey(64), GetRandomKey(64));
+            var tokens = new SharedAccessTokenService( () => Task.FromResult(new KeyPair{ Primary= GetRandomKey(64), Secondary= GetRandomKey(64)}));
 
-            var a = tokens.GetToken(new List<Claim> { new Claim("exp", "dsadsa"), new Claim("exps", "fdfs"), new Claim("exsp", "sda"), new Claim("exsp", "das") });
-            IEnumerable<Claim> claims;
-            Assert.AreEqual(true, tokens.CheckSignature(a,out claims));
+            var a = await tokens.GetTokenAsync(new List<Claim> { new Claim("exp", "dsadsa"), new Claim("exps", "fdfs"), new Claim("exsp", "sda"), new Claim("exsp", "das") });
+            IEnumerable<Claim> claims = await tokens.CheckSignatureAsync(a);
+            Assert.AreEqual(true, claims.Any());
 
             var path = "av";
             var prefix = "a";

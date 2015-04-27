@@ -86,7 +86,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
             resourceContext.User = context.Authentication.User = await authService.AuthenticateRequestAsync(context.Request, options) ?? new ClaimsPrincipal();
            
 
-            if ( authService.SkipAuthorizationManager(context, resourceContext) || await context.CheckAccessAsync(resourceContext.ResourceAuthorizationContext))
+            if ( await authService.SkipAuthorizationManagerAsync(context, resourceContext) || await context.CheckAccessAsync(resourceContext.ResourceAuthorizationContext))
             {
 
                 await requestHandler.HandleAsync(context, resourceContext);

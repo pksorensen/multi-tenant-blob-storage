@@ -14,15 +14,19 @@ using SInnovations.Azure.MultiTenantBlobStorage.Extensions;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
 {
+    public class KeyPair
+    {
+        public string Primary { get; set; }
+        public string Secondary { get; set; }
+    }
     public class SharedAccessTokenService : ISharedAccessTokenService
     {
-        private readonly string primary;
-        private readonly string secondary;
 
-        public SharedAccessTokenService(string primary, string secondary)
+        private readonly Func<Task<KeyPair>> _keyProvider;
+
+        public SharedAccessTokenService(Func<Task<KeyPair>> keysProvider)
         {
-            this.primary = primary;
-            this.secondary = secondary;
+            _keyProvider = _keyProvider;
         }
         public virtual IEnumerable<Claim> GetClaimsForToken(IOwinContext context, ResourceContext resourceContext )
         {
@@ -47,12 +51,12 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
             }
 
         }
-        public virtual bool CheckSignature(string token, out IEnumerable<Claim> claims)
+        public virtual async Task<IEnumerable<Claim>> CheckSignatureAsync(string token)
         {
-            claims = null;
+           
             var parts = token.Split('.');
             if (parts.Length != 3)
-                return false;
+                return Enumerable.Empty<Claim>();
 
             string incoming = parts[1]
                 .Replace('_', '/').Replace('-', '+');
@@ -63,13 +67,15 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
             }
             byte[] bytes = Convert.FromBase64String(incoming);
             string originalText = Encoding.UTF8.GetString(bytes);
-            claims = JObject.Parse(originalText).Properties().Select(p => new Claim(p.Name, p.Value.ToString())).ToArray();
+            var claims = (JObject.Parse(originalText).Properties().Select(p => new Claim(p.Name, p.Value.ToString()))).ToArray();
 
-            if ((string.Equals(parts[2], CalculateSignature(token,primary),StringComparison.OrdinalIgnoreCase) 
-                || string.Equals(parts[2], CalculateSignature(token,secondary),StringComparison.OrdinalIgnoreCase)))
-                return true;
+            var keys = await _keyProvider();
 
-            return false;
+            if ((string.Equals(parts[2], CalculateSignature(token, keys.Primary), StringComparison.OrdinalIgnoreCase) 
+                || string.Equals(parts[2], CalculateSignature(token,keys.Secondary),StringComparison.OrdinalIgnoreCase)))
+                return claims;
+
+            return Enumerable.Empty<Claim>();
             //
             
             
@@ -109,12 +115,14 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
 
             }
         }
-        public virtual string GetToken(IEnumerable<Claim> claims)
+        public virtual async Task<string> GetTokenAsync(IEnumerable<Claim> claims)
         {
             var body= string.Format("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.{0}", 
                 Base64UrlEncode(string.Format("{{{0}}}",string.Join(",",claims.OrderBy(o=>o.Type).Select(c=>string.Format("\"{0}\":\"{1}\"",c.Type,c.Value))))));
 
-            using (HMACSHA256 hmacSha256 = new HMACSHA256(Convert.FromBase64String(primary)))
+            var keys = await _keyProvider();
+
+            using (HMACSHA256 hmacSha256 = new HMACSHA256(Convert.FromBase64String(keys.Primary)))
             {
 
                 var signature = Convert.ToBase64String(hmacSha256.ComputeHash(Encoding.UTF8.GetBytes(body)));

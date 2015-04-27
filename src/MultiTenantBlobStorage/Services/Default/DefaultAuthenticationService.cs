@@ -22,9 +22,9 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
         }
 
 
-        public virtual bool SkipAuthorizationManager(OwinContext context, Configuration.Hosting.ResourceContext resourceContext)
+        public virtual Task<bool> SkipAuthorizationManagerAsync(OwinContext context, Configuration.Hosting.ResourceContext resourceContext)
         {
-            return false;
+            return Task.FromResult(false);
         }
     }
 }

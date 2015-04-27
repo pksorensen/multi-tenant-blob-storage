@@ -12,8 +12,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
     public interface ISharedAccessTokenService
     {
         IEnumerable<Claim> GetClaimsForToken(IOwinContext context, ResourceContext resourceContext);
-        string GetToken(IEnumerable<Claim> claims);
+        Task<string> GetTokenAsync(IEnumerable<Claim> claims);
 
-        bool CheckSignature(string token, out IEnumerable<Claim> claims);
+        Task<IEnumerable<Claim>> CheckSignatureAsync(string token);
     }
 }
