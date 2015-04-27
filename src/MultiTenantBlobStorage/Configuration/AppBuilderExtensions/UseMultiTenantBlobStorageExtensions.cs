@@ -71,10 +71,10 @@ namespace Owin
                 
                 await next();
 
-                if (options.ContainerResourceName.IsPresent())
+                if (options.ContainerResourceName.IsPresent() && ctx.Response.ReasonPhrase.IsPresent())
                 {
                     
-                    var idx = ctx.Response.ReasonPhrase.IndexOf("container");
+                    var idx =  ctx.Response.ReasonPhrase.IndexOf("container");
                     if (idx > -1)
                     {
                         ctx.Response.ReasonPhrase = ctx.Response.ReasonPhrase.Substring(0, idx) +

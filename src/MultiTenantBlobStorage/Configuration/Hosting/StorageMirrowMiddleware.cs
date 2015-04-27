@@ -98,9 +98,9 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
                 HandleUnauthorizedRequest( context, resourceContext.ResourceAuthorizationContext);
             }
 
-            context.Response.Body.Flush();
+           // context.Response.Body.Flush();
 
-            //await _next(env);
+           
         }
 
         private static bool CheckForSasUri(OwinContext context, ResourceContext resourceContext)
