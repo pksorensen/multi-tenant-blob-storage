@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.Logging
@@ -55,6 +57,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Logging
     /// </summary>
     public class DiagnosticsTraceLogger : ILog
     {
+        private static string fullPattern = Regex.Replace(DateTimeFormatInfo.CurrentInfo.FullDateTimePattern, "(:ss|:s)", "$1.fff");
+
         private readonly string _name;
 
         /// <summary>
@@ -88,12 +92,12 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Logging
             {
                 if (exception == null)
                 {
-                    var message = string.Format("{0}: {1} -- {2}", _name, DateTimeOffset.UtcNow, messageFunc());
+                    var message = string.Format("{0}: {1} -- {2}", _name, DateTimeOffset.UtcNow.ToString(fullPattern), string.Format(messageFunc(), formatParameters));
                     TraceMsg(logLevel, message);
                 }
                 else
                 {
-                    var message = string.Format("{0}: {1} -- {2}\n{3}", _name, DateTimeOffset.UtcNow, messageFunc(), exception);
+                    var message = string.Format("{0}: {1} -- {2}\n{3}", _name, DateTimeOffset.UtcNow.ToString(fullPattern), string.Format(messageFunc(), formatParameters), exception);
                     TraceMsg(logLevel, message);
                 }
             }
