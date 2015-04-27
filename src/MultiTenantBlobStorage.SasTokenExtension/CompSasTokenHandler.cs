@@ -13,6 +13,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using SInnovations.Azure.MultiTenantBlobStorage.Extensions;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension
 {
@@ -40,7 +41,37 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension
           
 
             var account = _storage.GetStorageAccount(resourceContext.Route);
-            var claims = _tokenservice.GetClaimsForToken(context, resourceContext);
+            var claims = _tokenservice.GetClaimsForToken(context, resourceContext).ToList();
+
+            var tokenIds = context.Request.Headers.GetValues("x-ms-tokenid");
+            if(tokenIds.Any())
+            {
+                claims.AddRange(tokenIds.Select(t => new Claim("token", t)));
+            
+                var container =  account.CreateCloudBlobClient().GetContainerReference(resourceContext.Route.Resource);
+
+
+                if(resourceContext.Route.Path.IsPresent())
+                {
+                    var blob = container.GetBlockBlobReference(resourceContext.Route.Path);
+
+                    await blob.FetchAttributesAsync();
+
+                    blob.Metadata["token"] = string.Join(",", tokenIds);
+                    
+                    await blob.SetMetadataAsync();
+                }
+                else
+                {
+                    await container.FetchAttributesAsync();
+
+                    container.Metadata["token"] = string.Join(",", tokenIds);
+
+                    await container.SetMetadataAsync();
+                }
+                
+            }
+
             var token = string.Format("?token={0}", await _tokenservice.GetTokenAsync(claims));
                       
 

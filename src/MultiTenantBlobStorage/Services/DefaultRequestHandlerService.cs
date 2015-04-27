@@ -32,10 +32,12 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
         static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
 
         protected MultiTenantBlobStorageOptions Options { get; set; }
+        private readonly IAuthenticationService _authService;
 
-        public DefaultRequestHandlerService(MultiTenantBlobStorageOptions options)
+        public DefaultRequestHandlerService(MultiTenantBlobStorageOptions options, IAuthenticationService authService)
         {
             Options = options;
+            this._authService = authService;
         }
 
         //protected IListBlobsService 
@@ -233,8 +235,17 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
             using (HttpWebResponse response = await GetResponseAsync(request))
             {
 
+                if (!await _authService.BlobStorageResponseAuthorizedAsync(context,resourceContext, response))
+                {
+                    context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                    context.Response.ReasonPhrase = "Unauthorized";
+                }
+
                 context.Response.ReasonPhrase = response.StatusDescription;
                 context.Response.StatusCode = (int)response.StatusCode;
+
+              
+
 
                 foreach (var headerKey in response.Headers.AllKeys)
                 {

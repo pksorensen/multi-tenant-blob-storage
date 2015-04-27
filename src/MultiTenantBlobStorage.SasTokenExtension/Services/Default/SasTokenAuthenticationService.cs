@@ -9,6 +9,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Services.Default
 {
@@ -18,6 +19,19 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Services.D
         public SasTokenAuthenticationService(ISharedAccessTokenService tokenService)
         {
             this._tokenService = tokenService;
+            Claims = new List<Claim>();
+        }
+        protected IEnumerable<Claim> Claims { get; set; }
+        public override Task<bool> BlobStorageResponseAuthorizedAsync(IOwinContext context, ResourceContext resourceContext, System.Net.HttpWebResponse response)
+        {
+            var tokenids = Claims.Where(t => t.Type == "token").ToArray();
+            if(tokenids.Any())
+            {
+                var tokens = response.GetResponseHeader("x-ms-meta-token");
+                return Task.FromResult(tokenids.All(t => tokens.IndexOf(t.Value) > -1));
+            }
+                
+            return base.BlobStorageResponseAuthorizedAsync(context,resourceContext,response);
         }
         public override async Task<bool> SkipAuthorizationManagerAsync(OwinContext context, ResourceContext resourceContext)
         {
@@ -26,11 +40,11 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Services.D
            
             if (!string.IsNullOrWhiteSpace(token))
             {
-                IEnumerable<Claim> claims = await _tokenService.CheckSignatureAsync(token);
-                if(claims.Any())
+                Claims = await _tokenService.CheckSignatureAsync(token);
+                if (Claims.Any())
                 {
-                    var prefix = GetPrefixValue(claims);
-                    var exp = claims.First(c=>c.Type=="exp");
+                    var prefix = GetPrefixValue(Claims);
+                    var exp = Claims.First(c => c.Type == "exp");
                     var flag = resourceContext.Route.Path.StartsWith(prefix);
                     var expired = DateTimeOffset.UtcNow >= DateTimeOffset.Parse(exp.Value, CultureInfo.InvariantCulture);
 

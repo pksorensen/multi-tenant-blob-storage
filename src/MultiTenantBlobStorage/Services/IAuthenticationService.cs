@@ -21,5 +21,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
         Task<ClaimsPrincipal> AuthenticateRequestAsync(IOwinRequest request, MultiTenantBlobStorageOptions options);
 
         Task<bool> SkipAuthorizationManagerAsync(OwinContext context, ResourceContext resourceContext);
+
+        Task<bool> BlobStorageResponseAuthorizedAsync(IOwinContext context, ResourceContext resourceContext, System.Net.HttpWebResponse response);
     }
 }

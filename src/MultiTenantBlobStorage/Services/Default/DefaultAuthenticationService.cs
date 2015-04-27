@@ -1,5 +1,6 @@
 ﻿using Microsoft.Owin;
 using SInnovations.Azure.MultiTenantBlobStorage.Configuration;
+using SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,6 +26,12 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
         public virtual Task<bool> SkipAuthorizationManagerAsync(OwinContext context, Configuration.Hosting.ResourceContext resourceContext)
         {
             return Task.FromResult(false);
+        }
+
+
+        public virtual Task<bool> BlobStorageResponseAuthorizedAsync(IOwinContext context, ResourceContext resourceContext, System.Net.HttpWebResponse response)
+        {
+            return Task.FromResult(true);
         }
     }
 }
