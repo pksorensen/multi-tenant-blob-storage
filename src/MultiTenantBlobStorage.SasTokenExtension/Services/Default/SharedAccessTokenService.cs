@@ -22,11 +22,11 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
     public class SharedAccessTokenService : ISharedAccessTokenService
     {
 
-        private readonly Func<Task<KeyPair>> _keyProvider;
+        private readonly Lazy<Task<KeyPair>> _keyProvider;
 
         public SharedAccessTokenService(Func<Task<KeyPair>> keysProvider)
         {
-            _keyProvider = _keyProvider;
+            _keyProvider = new Lazy<Task<KeyPair>>(keysProvider);
         }
         public virtual IEnumerable<Claim> GetClaimsForToken(IOwinContext context, ResourceContext resourceContext )
         {
@@ -69,7 +69,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
             string originalText = Encoding.UTF8.GetString(bytes);
             var claims = (JObject.Parse(originalText).Properties().Select(p => new Claim(p.Name, p.Value.ToString()))).ToArray();
 
-            var keys = await _keyProvider();
+            var keys = await _keyProvider.Value;
 
             if ((string.Equals(parts[2], CalculateSignature(token, keys.Primary), StringComparison.OrdinalIgnoreCase) 
                 || string.Equals(parts[2], CalculateSignature(token,keys.Secondary),StringComparison.OrdinalIgnoreCase)))
@@ -120,7 +120,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
             var body= string.Format("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.{0}", 
                 Base64UrlEncode(string.Format("{{{0}}}",string.Join(",",claims.OrderBy(o=>o.Type).Select(c=>string.Format("\"{0}\":\"{1}\"",c.Type,c.Value))))));
 
-            var keys = await _keyProvider();
+            var keys = await _keyProvider.Value;
 
             using (HMACSHA256 hmacSha256 = new HMACSHA256(Convert.FromBase64String(keys.Primary)))
             {
