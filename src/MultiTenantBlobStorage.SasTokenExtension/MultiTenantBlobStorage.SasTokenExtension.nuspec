@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>S-Innovations.Azure.MultiTenantBlobStorage.SasTokenExtension</id>
-    <version>1.0.0</version>
+    <version>$version$</version>
     <title>$title$</title>
     <authors>$author$</authors>
     <owners>$author$</owners>
@@ -12,7 +12,7 @@
     <copyright>Copyright 2014</copyright>
     <tags>S-Innovations</tags>
     <dependencies>
-      <dependency id="S-Innovations.Azure.MultiTenantBlobStorage"/>
+      <dependency id="S-Innovations.Azure.MultiTenantBlobStorage" version="$version$"/>
     </dependencies>
   </metadata>
 </package>

@@ -91,6 +91,7 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="MultiTenantBlobStorage.SasTokenExtension.nuspec" />
+    <None Include="NuGet.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
