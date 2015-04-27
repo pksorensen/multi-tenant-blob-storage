@@ -118,7 +118,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
         public virtual async Task<string> GetTokenAsync(IEnumerable<Claim> claims)
         {
             var body= string.Format("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.{0}", 
-                Base64UrlEncode(string.Format("{{{0}}}",string.Join(",",claims.OrderBy(o=>o.Type).Select(c=>string.Format("\"{0}\":\"{1}\"",c.Type,c.Value))))));
+                Base64UrlEncode(string.Format("{{{0}}}",string.Join(",",claims.GroupBy(o=>o.Type).OrderBy(o=>o.Key).Select(GetStringProperty)))));
 
             var keys = await _keyProvider.Value;
 
@@ -130,6 +130,18 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
                 return string.Format("{0}.{1}", body, signature);
             }
         
+        }
+
+        private string GetStringProperty(IGrouping<string, Claim> arg)
+        {
+            return string.Format("\"{0}\":\"{1}\"", arg.Key, GetStringValue(arg));
+        }
+
+        private string GetStringValue(IGrouping<string, Claim> arg)
+        {
+            if (arg.Skip(1).Any())
+                return string.Format("[{0}]", string.Join(",", arg.Select(a=>a.Value)));
+            return arg.First().Value;
         }
         static readonly char[] padding = { '=' };
         public string Base64UrlEncode(string input)
