@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0"?>
 <package >
   <metadata>
-    <id>MultiTenantBlobStorage</id>
+    <id>S-Innovations.Azure.MultiTenantBlobStorage</id>
     <version>1.0.0</version>
     <title>$title$</title>
     <authors>$author$</authors>
@@ -10,8 +10,6 @@
     <description>$description$</description>
     <releaseNotes>Summary of changes made in this release of the package.</releaseNotes>
     <copyright>Copyright 2014</copyright>
-    <tags>Tag1 Tag2</tags>
-
-  </metadata>
-  
+    <tags>S-Innovations</tags>
+  </metadata>  
 </package>
