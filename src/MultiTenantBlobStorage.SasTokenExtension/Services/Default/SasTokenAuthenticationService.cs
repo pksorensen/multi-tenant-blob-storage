@@ -41,7 +41,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Services.D
             if (!string.IsNullOrWhiteSpace(token))
             {
                 Claims = await _tokenService.CheckSignatureAsync(token);
-                if (Claims.Any())
+                if (Claims.Any(c=>c.Type=="exp"))
                 {
                     var prefix = GetPrefixValue(Claims);
                     var exp = Claims.First(c => c.Type == "exp");

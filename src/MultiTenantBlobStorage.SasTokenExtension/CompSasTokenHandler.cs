@@ -14,6 +14,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using SInnovations.Azure.MultiTenantBlobStorage.Extensions;
+using SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Models;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension
 {
@@ -36,43 +37,48 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension
             return Task.FromResult(resourceContext.Action == BlobCompSas || resourceContext.Action == ContainerCompSas);
         }
        
+       
         public async Task<bool> OnBeforeHandleRequestAsync(IOwinContext context, ResourceContext resourceContext)
         {
           
 
             var account = _storage.GetStorageAccount(resourceContext.Route);
-            var claims = _tokenservice.GetClaimsForToken(context, resourceContext).ToList();
+            var model = await _tokenservice.GetTokenModelAsync(context, resourceContext);
 
-            var tokenIds = context.Request.Headers.GetValues("x-ms-tokenid");
-            if(tokenIds.Any())
-            {
-                claims.AddRange(tokenIds.Select(t => new Claim("token", t)));
-            
-                var container =  account.CreateCloudBlobClient().GetContainerReference(resourceContext.Route.Resource);
+          
+            if (model.Claims.Any(c=>c.Type=="token"))
+            {               
+                var container =  account.CreateCloudBlobClient()
+                    .GetContainerReference(await _containers.GetContainerNameAsync(resourceContext.Route));
 
+                var tokens = model.Claims.Where(k => k.Type == "token").Select(t => t.Value).ToList();
 
                 if(resourceContext.Route.Path.IsPresent())
                 {
                     var blob = container.GetBlockBlobReference(resourceContext.Route.Path);
 
                     await blob.FetchAttributesAsync();
+                    if (blob.Metadata.ContainsKey("token"))
+                        tokens.AddRange(blob.Metadata["token"].Split(','));
 
-                    blob.Metadata["token"] = string.Join(",", tokenIds);
+                    blob.Metadata["token"] = string.Join(",", tokens);
                     
                     await blob.SetMetadataAsync();
                 }
                 else
                 {
                     await container.FetchAttributesAsync();
-
-                    container.Metadata["token"] = string.Join(",", tokenIds);
+                    if (container.Metadata.ContainsKey("token"))
+                        tokens.AddRange(container.Metadata["token"].Split(','));
+                   
+                    container.Metadata["token"] = string.Join(",", tokens);
 
                     await container.SetMetadataAsync();
                 }
                 
             }
 
-            var token = string.Format("?token={0}", await _tokenservice.GetTokenAsync(claims));
+            var token = string.Format("?token={0}", await _tokenservice.GetTokenAsync(model));
                       
 
             context.Response.StatusCode = 200;
@@ -84,7 +90,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension
                 new JObject(
                     new JProperty("sas",
                         token),
-                    new JProperty("expire", claims.First(c=>c.Type=="exp").Value)
+                    new JProperty("expire", model.Expires.HasValue? model.Expires : null)
                     ).WriteTo(writer);
 
                 writer.Flush();

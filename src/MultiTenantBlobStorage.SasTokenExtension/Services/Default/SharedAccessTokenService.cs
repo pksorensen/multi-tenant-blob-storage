@@ -11,6 +11,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using SInnovations.Azure.MultiTenantBlobStorage.Extensions;
+using SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Models;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
 {
@@ -28,37 +29,65 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
         {
             _keyProvider = new Lazy<Task<KeyPair>>(keysProvider);
         }
-        public virtual IEnumerable<Claim> GetClaimsForToken(IOwinContext context, ResourceContext resourceContext )
-        {
-            var expireTIme = DateTimeOffset.UtcNow.AddHours(4);
-            String dateInRfc1123Format = expireTIme.ToString("R", CultureInfo.InvariantCulture);
 
-            //Expire
-          
-                yield return new Claim("exp", dateInRfc1123Format);
-            //notbefore 
-           
-                yield return new Claim("nbf", DateTimeOffset.UtcNow.ToString("R", CultureInfo.InvariantCulture));
-            
-            yield return new Claim("role", "read");
-            yield return new Claim("role", "write");
-            yield return new Claim("tenant", resourceContext.Route.TenantId);
-            yield return new Claim("resource", resourceContext.Route.Resource);
-            if (!string.IsNullOrWhiteSpace(resourceContext.Route.Path))
+        public static SasTokenGenerationModel GetModel(IOwinRequest request)
+        {
+            string[] expires,noexpire;
+            DateTimeOffset? expire =
+                request.Headers.TryGetValue("x-ms-token-exp", out expires) && expires.Length == 1 ?
+                    DateTimeOffset.Parse(expires[0], CultureInfo.InvariantCulture) : DateTimeOffset.UtcNow.AddHours(4);
+            if (request.Headers.TryGetValue("x-ms-token-noexp", out noexpire))
+                expire = null;
+
+            var claims = new List<Claim>();
+
+            var tokenIds = request.Headers.GetValues("x-ms-token");
+            if (tokenIds!=null && tokenIds.Any())
             {
-                yield return new Claim("prefix", resourceContext.Route.Path);
-            
+                claims.AddRange(tokenIds.Select(t => new Claim("token", t)));
             }
 
+            //Expire
+
+            if (expire.HasValue)
+                claims.Add(new Claim("exp", expire.Value.ToString("R", CultureInfo.InvariantCulture)));
+
+            return new SasTokenGenerationModel
+            {
+                Expires = expire,
+                Claims = claims,
+            };
+        }
+
+        public virtual Task<SasTokenGenerationModel> GetTokenModelAsync(IOwinContext context, ResourceContext resourceContext)
+        {
+            var model = GetModel(context.Request);
+
+            
+            //notbefore 
+
+            model.Claims.Add(new Claim("nbf", DateTimeOffset.UtcNow.ToString("R", CultureInfo.InvariantCulture)));
+
+            model.Claims.Add(new Claim("role", "read"));
+            model.Claims.Add(new Claim("role", "write"));
+            model.Claims.Add(new Claim("tenant", resourceContext.Route.TenantId));
+            model.Claims.Add(new Claim("resource", resourceContext.Route.Resource));
+            if (!string.IsNullOrWhiteSpace(resourceContext.Route.Path))
+            {
+                model.Claims.Add(new Claim("prefix", resourceContext.Route.Path));
+
+            }
+
+            return Task.FromResult(model);
         }
         public virtual async Task<IEnumerable<Claim>> CheckSignatureAsync(string token)
         {
-           
+
             var parts = token.Split('.');
             if (parts.Length != 3)
                 return Enumerable.Empty<Claim>();
-            
-            var body = GetBase64Value(parts[1]);           
+
+            var body = GetBase64Value(parts[1]);
             var signature = GetBase64Value(parts[2]);
 
             byte[] bytes = Convert.FromBase64String(body);
@@ -67,14 +96,14 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
 
             var keys = await _keyProvider.Value;
 
-            if ((string.Equals(parts[2], CalculateSignature(token, keys.Primary), StringComparison.OrdinalIgnoreCase) 
-                || string.Equals(parts[2], CalculateSignature(token,keys.Secondary),StringComparison.OrdinalIgnoreCase)))
+            if ((string.Equals(parts[2], CalculateSignature(token, keys.Primary), StringComparison.OrdinalIgnoreCase)
+                || string.Equals(parts[2], CalculateSignature(token, keys.Secondary), StringComparison.OrdinalIgnoreCase)))
                 return claims;
 
             return Enumerable.Empty<Claim>();
             //
-            
-            
+
+
             //var claims = 
 
             //var signature = parts[2];
@@ -93,9 +122,9 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
             //String nbfInRfc1123Format = nbf.ToString("R", CultureInfo.InvariantCulture);
             //var role = roleToken.ToObject<string[]>();
 
-          
-            
-          
+
+
+
 
 
 
@@ -117,7 +146,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
         {
             if (arg.Value.Type == JTokenType.Array)
                 return (arg.Value as JArray).Select(p => new Claim(arg.Name, p.ToString()));
-            return new Claim[] {new Claim(arg.Name, arg.Value.ToString())};
+            return new Claim[] { new Claim(arg.Name, arg.Value.ToString()) };
         }
 
         private string CalculateSignature(string token, string key)
@@ -129,10 +158,10 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
 
             }
         }
-        public virtual async Task<string> GetTokenAsync(IEnumerable<Claim> claims)
+        public virtual async Task<string> GetTokenAsync(SasTokenGenerationModel model)
         {
-            var body= string.Format("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.{0}", 
-                Base64UrlEncode(string.Format("{{{0}}}",string.Join(",",claims.GroupBy(o=>o.Type).OrderBy(o=>o.Key).Select(GetStringProperty)))));
+            var body = string.Format("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.{0}",
+                Base64UrlEncode(string.Format("{{{0}}}", string.Join(",", model.Claims.GroupBy(o => o.Type).OrderBy(o => o.Key).Select(GetStringProperty)))));
 
             var keys = await _keyProvider.Value;
 
@@ -143,7 +172,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
                 return string.Format("{0}.{1}", body, signature);
             }
 
-        
+
         }
 
         private string GetStringProperty(IGrouping<string, Claim> arg)
@@ -154,7 +183,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
         private string GetValue(IGrouping<string, Claim> arg)
         {
             if (arg.Skip(1).Any())
-                return string.Format("[{0}]", string.Join(",", arg.Select(a=>string.Format("\"{0}\"", a.Value))));
+                return string.Format("[{0}]", string.Join(",", arg.Select(a => string.Format("\"{0}\"", a.Value))));
             return string.Format("\"{0}\"", arg.First().Value);
         }
         static readonly char[] padding = { '=' };
@@ -168,6 +197,6 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
             return System.Convert.ToBase64String(input)
           .TrimEnd(padding).Replace('+', '-').Replace('/', '_');
         }
-       
+
     }
 }

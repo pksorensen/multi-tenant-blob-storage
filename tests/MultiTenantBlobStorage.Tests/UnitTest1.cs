@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Linq;
+using SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Models;
 
 namespace MultiTenantBlobStorage.Tests
 {
@@ -27,8 +28,11 @@ namespace MultiTenantBlobStorage.Tests
             var defaultvalue = default(Claim);
 
             var tokens = new SharedAccessTokenService( () => Task.FromResult(new KeyPair{ Primary= GetRandomKey(64), Secondary= GetRandomKey(64)}));
+            var model = new SasTokenGenerationModel{
+                Claims = new List<Claim> { new Claim("exp", "dsadsa"), new Claim("exps", "fdfs"), new Claim("exsp", "sda"), new Claim("exsp", "das") }
+            };
 
-            var a = await tokens.GetTokenAsync(new List<Claim> { new Claim("exp", "dsadsa"), new Claim("exps", "fdfs"), new Claim("exsp", "sda"), new Claim("exsp", "das") });
+            var a = await tokens.GetTokenAsync(model);
             IEnumerable<Claim> claims = await tokens.CheckSignatureAsync(a);
             Assert.AreEqual(true, claims.Any());
 
