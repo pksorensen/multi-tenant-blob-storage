@@ -47,7 +47,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Services.D
         {
 
             var token = context.Request.Query["token"] ?? context.Request.Query["access_token"];
-           
+            var flag = true;
+
             if (!string.IsNullOrWhiteSpace(token))
             {
                 var claims = await _tokenService.CheckSignatureAsync(token);
@@ -55,14 +56,16 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Services.D
                 var resource = GetValue(claims, "resource");
                 var tenant = GetValue(claims, "tenant");
 
+                flag &= resourceContext.Route.Path.StartsWith(prefix);
+
                 if (claims.Any(c=>c.Type=="exp"))
                 {
                    
                     var exp = claims.First(c => c.Type == "exp");
-                    var flag = resourceContext.Route.Path.StartsWith(prefix);
+                    
                     var expired = DateTimeOffset.UtcNow >= DateTimeOffset.Parse(exp.Value, CultureInfo.InvariantCulture);
 
-                    return flag && !expired;
+                    flag &= !expired;
                 }
 
                  var tokenids = claims.Where(t => t.Type == "token").ToArray();
@@ -72,10 +75,11 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Services.D
                      RevokeTokens = tokenids.Where(t => tokens.IndexOf(t.Value) == -1).Select(t => t.Value).ToArray();
 
                  }
-
+                 return flag;
             }
 
-            return false;
+          return false;
+
         }
 
         protected virtual async Task<string> GetTokenIdsAsync(string prefix, string resource, string tenant)
