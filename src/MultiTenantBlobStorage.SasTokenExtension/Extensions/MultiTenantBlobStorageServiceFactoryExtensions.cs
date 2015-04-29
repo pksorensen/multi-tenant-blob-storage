@@ -1,4 +1,5 @@
 ﻿using SInnovations.Azure.MultiTenantBlobStorage.Configuration;
+using SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Services;
 using SInnovations.Azure.MultiTenantBlobStorage.Services;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Extensions
 {
     public static class MultiTenantBlobStorageServiceFactoryExtensions
     {
-        public static void UseSasTokens(this MultiTenantBlobStorageServiceFactory factory, Func<IDependencyResolver,ISharedAccessTokenService> sharedAccessTokenServiceFactory  )
+        public static void UseSasTokens(this MultiTenantBlobStorageServiceFactory factory, 
+            Func<IDependencyResolver,ISharedAccessTokenService> sharedAccessTokenServiceFactory)
         {
 
             factory.Register(new Registration<ISharedAccessTokenService>(sharedAccessTokenServiceFactory));

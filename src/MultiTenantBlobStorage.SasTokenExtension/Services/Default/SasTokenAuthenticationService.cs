@@ -1,5 +1,6 @@
 ﻿using Microsoft.Owin;
 using SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting;
+using SInnovations.Azure.MultiTenantBlobStorage.Extensions;
 using SInnovations.Azure.MultiTenantBlobStorage.Services;
 using SInnovations.Azure.MultiTenantBlobStorage.Services.Default;
 using System;
@@ -7,28 +8,37 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
-using System.Text;
 using System.Threading.Tasks;
-using System.Linq;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Services.Default
 {
     public class SasTokenAuthenticationService : DefaultAuthenticationService
     {
         private readonly ISharedAccessTokenService _tokenService;
-        public SasTokenAuthenticationService(ISharedAccessTokenService tokenService)
+        private readonly IStorageAccountResolverService _storage;
+        private readonly ITenantContainerNameService _containers;
+
+    
+        public SasTokenAuthenticationService(
+            ISharedAccessTokenService tokenService, 
+            IStorageAccountResolverService storage,
+            ITenantContainerNameService containers
+            )
         {
             this._tokenService = tokenService;
-            Claims = new List<Claim>();
+            this._storage = storage;
+            this._containers = containers;
+
+            RevokeTokens = new List<String>();
         }
-        protected IEnumerable<Claim> Claims { get; set; }
+        protected IEnumerable<String> RevokeTokens { get; set; }
         public override Task<bool> BlobStorageResponseAuthorizedAsync(IOwinContext context, ResourceContext resourceContext, System.Net.HttpWebResponse response)
         {
-            var tokenids = Claims.Where(t => t.Type == "token").ToArray();
-            if(tokenids.Any())
+
+            if (RevokeTokens.Any())
             {
                 var tokens = response.GetResponseHeader("x-ms-meta-token");
-                return Task.FromResult(tokenids.All(t => tokens.IndexOf(t.Value) > -1));
+                return Task.FromResult(RevokeTokens.All(t => tokens.IndexOf(t) > -1));
             }
                 
             return base.BlobStorageResponseAuthorizedAsync(context,resourceContext,response);
@@ -36,28 +46,69 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Services.D
         public override async Task<bool> SkipAuthorizationManagerAsync(OwinContext context, ResourceContext resourceContext)
         {
 
-            var token = context.Request.Query["token"];
+            var token = context.Request.Query["token"] ?? context.Request.Query["access_token"];
            
             if (!string.IsNullOrWhiteSpace(token))
             {
-                Claims = await _tokenService.CheckSignatureAsync(token);
-                if (Claims.Any(c=>c.Type=="exp"))
+                var claims = await _tokenService.CheckSignatureAsync(token);
+                var prefix = GetValue(claims,"prefix");
+                var resource = GetValue(claims, "resource");
+                var tenant = GetValue(claims, "tenant");
+
+                if (claims.Any(c=>c.Type=="exp"))
                 {
-                    var prefix = GetPrefixValue(Claims);
-                    var exp = Claims.First(c => c.Type == "exp");
+                   
+                    var exp = claims.First(c => c.Type == "exp");
                     var flag = resourceContext.Route.Path.StartsWith(prefix);
                     var expired = DateTimeOffset.UtcNow >= DateTimeOffset.Parse(exp.Value, CultureInfo.InvariantCulture);
 
                     return flag && !expired;
                 }
+
+                 var tokenids = claims.Where(t => t.Type == "token").ToArray();
+                 if (tokenids.Any())
+                 {
+                     var tokens = await GetTokenIdsAsync(prefix, resource, tenant);
+                     RevokeTokens = tokenids.Where(t => tokens.IndexOf(t.Value) == -1).Select(t => t.Value).ToArray();
+
+                 }
+
             }
 
             return false;
         }
 
-        private static string GetPrefixValue(IEnumerable<Claim> claims)
+        protected virtual async Task<string> GetTokenIdsAsync(string prefix, string resource, string tenant)
         {
-            var prefix = claims.FirstOrDefault(c => c.Type == "prefix");
+            IDictionary<string, string> md;
+
+            var blobClient = _storage.GetStorageAccount(tenant).CreateCloudBlobClient();
+            var blobContainer = blobClient.GetContainerReference(await _containers.GetContainerNameAsync(tenant, resource));
+
+            if (prefix.IsPresent())
+            {
+                var blob = blobContainer.GetBlockBlobReference(prefix);
+                await blob.FetchAttributesAsync();
+                md = blob.Metadata;
+
+            }
+            else
+            {
+                await blobContainer.FetchAttributesAsync();
+                md = blobContainer.Metadata;
+
+
+            }
+            string tokens;
+            md.TryGetValue("token", out tokens);
+            return tokens;
+        }
+
+       
+
+        private static string GetValue(IEnumerable<Claim> claims,string type)
+        {
+            var prefix = claims.FirstOrDefault(c => c.Type ==type);
             if (prefix == null)
                 return "";
             return prefix.Value;

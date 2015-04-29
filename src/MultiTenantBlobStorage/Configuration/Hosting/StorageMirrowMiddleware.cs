@@ -68,6 +68,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
             {
                // Trace.WriteLine("SENDING HEADERS");
             }, null);
+            
             var resourceContext =context.ResolveDependency<ResourceContext>();
             var options = context.ResolveDependency<MultiTenantBlobStorageOptions>();
             var requestHandler = context.ResolveDependency<IRequestHandlerService>();
