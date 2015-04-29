@@ -99,7 +99,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
         }
         private async Task SetMetaDataOnDeleteAsync(IOwinContext context, ResourceContext resourceContext)
         {
-            var storage = context.ResolveDependency<IStorageAccountResolverService>().GetStorageAccount(resourceContext.Route);
+            var storage = context.ResolveDependency<IStorageAccountResolverService>().GetStorageAccount(resourceContext.Route.TenantId);
 
             var metadata = Options.DeleteOptions.SetMetaDataOnDelete();
             var container = storage.CreateCloudBlobClient().GetContainerReference(resourceContext.Route.ContainerName);

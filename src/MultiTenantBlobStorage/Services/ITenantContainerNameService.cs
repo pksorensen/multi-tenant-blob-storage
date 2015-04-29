@@ -8,8 +8,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 {
     public interface ITenantContainerNameService
     {
-       
 
-        Task<string> GetContainerNameAsync(TenantRoute tenantRoute);
+
+        Task<string> GetContainerNameAsync(string tenant, string resource);
     }
 }

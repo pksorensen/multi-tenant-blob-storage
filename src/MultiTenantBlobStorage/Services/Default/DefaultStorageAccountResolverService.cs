@@ -19,7 +19,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
             Options = options;
         }
          
-        public virtual CloudStorageAccount GetStorageAccount(TenantRoute route)
+        public virtual CloudStorageAccount GetStorageAccount(string tenant)
         {
             return Options.DefaultStorageAccount;
         }
@@ -27,12 +27,12 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
         public virtual Task<string> GetBlobEndpointAsync(TenantRoute route)
         {
             
-            return Task.FromResult(GetStorageAccount(route).BlobEndpoint.AbsoluteUri);
+            return Task.FromResult(GetStorageAccount(route.TenantId).BlobEndpoint.AbsoluteUri);
         }
 
         public virtual Task SignRequestAsync(HttpWebRequest request, TenantRoute route)
         {
-            var account = GetStorageAccount(route);
+            var account = GetStorageAccount(route.TenantId);
             var a = new SharedKeyAuthenticationHandler(SharedKeyCanonicalizer.Instance, account.Credentials, account.Credentials.AccountName);
             a.SignRequest(request, null);
             return Task.FromResult(0);

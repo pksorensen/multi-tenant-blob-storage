@@ -42,42 +42,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension
         {
           
 
-            var account = _storage.GetStorageAccount(resourceContext.Route);
+           
             var model = await _tokenservice.GetTokenModelAsync(context, resourceContext);
-
-          
-            if (model.Claims.Any(c=>c.Type=="token"))
-            {               
-                var container =  account.CreateCloudBlobClient()
-                    .GetContainerReference(await _containers.GetContainerNameAsync(resourceContext.Route));
-
-                var tokens = model.Claims.Where(k => k.Type == "token").Select(t => t.Value).ToList();
-
-                if(resourceContext.Route.Path.IsPresent())
-                {
-                    var blob = container.GetBlockBlobReference(resourceContext.Route.Path);
-
-                    await blob.FetchAttributesAsync();
-                    if (blob.Metadata.ContainsKey("token"))
-                        tokens.AddRange(blob.Metadata["token"].Split(','));
-
-                    blob.Metadata["token"] = string.Join(",", tokens);
-                    
-                    await blob.SetMetadataAsync();
-                }
-                else
-                {
-                    await container.FetchAttributesAsync();
-                    if (container.Metadata.ContainsKey("token"))
-                        tokens.AddRange(container.Metadata["token"].Split(','));
-                   
-                    container.Metadata["token"] = string.Join(",", tokens);
-
-                    await container.SetMetadataAsync();
-                }
-                
-            }
-
             var token = string.Format("?token={0}", await _tokenservice.GetTokenAsync(model));
                       
 

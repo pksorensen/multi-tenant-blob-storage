@@ -24,6 +24,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
     public class SharedAccessTokenService : ISharedAccessTokenService
     {
 
+        private readonly IStorageAccountResolverService _storage;
+        private readonly ITenantContainerNameService _containers;
         private readonly Lazy<Task<KeyPair>> _keyProvider;
 
         public SharedAccessTokenService(Func<Task<KeyPair>> keysProvider)
@@ -160,6 +162,45 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
         }
         public virtual async Task<string> GetTokenAsync(SasTokenGenerationModel model)
         {
+
+            if (model.Claims.Any(c => c.Type == "token"))
+            {
+                var tenant = model.Claims.First(c=>c.Type=="tenant");
+                var resource = model.Claims.First(c=>c.Type=="resource");
+                var path = model.Claims.FirstOrDefault(c => c.Type == "prefix") ?? new Claim("prefix","");
+
+                var account = _storage.GetStorageAccount(tenant.Value);
+                var container = account.CreateCloudBlobClient()
+                    .GetContainerReference(await _containers.GetContainerNameAsync(tenant.Value, resource.Value));
+                
+
+                var tokens = model.Claims.Where(k => k.Type == "token").Select(t => t.Value).ToList();
+
+                if (path.Value.IsPresent())
+                {
+                    var blob = container.GetBlockBlobReference(path.Value);
+
+                    await blob.FetchAttributesAsync();
+                    if (blob.Metadata.ContainsKey("token"))
+                        tokens.AddRange(blob.Metadata["token"].Split(','));
+
+                    blob.Metadata["token"] = string.Join(",", tokens);
+
+                    await blob.SetMetadataAsync();
+                }
+                else
+                {
+                    await container.FetchAttributesAsync();
+                    if (container.Metadata.ContainsKey("token"))
+                        tokens.AddRange(container.Metadata["token"].Split(','));
+
+                    container.Metadata["token"] = string.Join(",", tokens);
+
+                    await container.SetMetadataAsync();
+                }
+
+            }
+
             var body = string.Format("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.{0}",
                 Base64UrlEncode(string.Format("{{{0}}}", string.Join(",", model.Claims.GroupBy(o => o.Type).OrderBy(o => o.Key).Select(GetStringProperty)))));
 

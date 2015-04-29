@@ -27,7 +27,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
             if (parts.Length > 1)
                 route.Resource = parts[1];
 
-            route.ContainerName = await ContainerNameService.GetContainerNameAsync(route);
+            route.ContainerName = await ContainerNameService.GetContainerNameAsync(route.TenantId,route.Resource);
             route.Host = await StorageAccountResolverService.GetBlobEndpointAsync(route);
 
             var resourceId = string.Format("{0}/{1}",route.TenantId,  route.Resource);

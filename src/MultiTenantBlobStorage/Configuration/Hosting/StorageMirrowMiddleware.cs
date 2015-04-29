@@ -127,7 +127,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
 
                 if (!(string.IsNullOrWhiteSpace(sig) || string.IsNullOrWhiteSpace(expire)))
                 {
-                    var account = context.ResolveDependency<IStorageAccountResolverService>().GetStorageAccount(resourceContext.Route);
+                    var account = context.ResolveDependency<IStorageAccountResolverService>().GetStorageAccount(resourceContext.Route.TenantId);
 
                     string signature = "";
                     using (HMACSHA256 hmacSha256 = new HMACSHA256(Convert.FromBase64String(account.Credentials.ExportBase64EncodedKey())))
