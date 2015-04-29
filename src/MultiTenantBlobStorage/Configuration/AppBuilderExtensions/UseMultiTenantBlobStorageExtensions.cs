@@ -117,7 +117,7 @@ namespace Owin
                
                 if (name != null)
                 {
-                    container.RegisterInstance(name,registration.Instance);                 
+                    container.RegisterInstance(registration.DependencyType, name,registration.Instance);                 
                 }
                 else
                 {
