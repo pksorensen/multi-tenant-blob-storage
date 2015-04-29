@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using SInnovations.Azure.MultiTenantBlobStorage.Extensions;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Models
 {
@@ -14,14 +15,17 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Models
         {
             Claims = new List<Claim>();
         }
-        public SasTokenGenerationModel(string tenant,string resource)
+        public SasTokenGenerationModel(string tenant,string resource,string path = null)
         {
             Claims = new List<Claim> {
             new Claim("tenant",tenant),
             new Claim("resource",resource),
+            
             };
+            if (path.IsPresent())
+                Claims.Add(new Claim("prefix", path));
         }
-        public DateTimeOffset? Expires { get; set; }
+        //public DateTimeOffset? Expires { get; set; }
         public List<Claim> Claims { get; set; }
     }
 

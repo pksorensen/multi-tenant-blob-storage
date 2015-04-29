@@ -55,7 +55,6 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
 
             return new SasTokenGenerationModel
             {
-                Expires = expire,
                 Claims = claims,
             };
         }

@@ -89,9 +89,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension
 
                 new JObject(
                     new JProperty("sas",
-                        token),
-                    new JProperty("expire", model.Expires.HasValue? model.Expires : null)
-                    ).WriteTo(writer);
+                        token)
+                        ).WriteTo(writer);
 
                 writer.Flush();
             }
