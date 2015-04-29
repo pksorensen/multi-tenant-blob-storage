@@ -114,11 +114,10 @@ namespace Owin
             var name = registration.Name;
             if (registration.Instance != null)
             {
-                var reg = container.RegisterInstance(registration.Instance);
+               
                 if (name != null)
                 {
-                    container.RegisterInstance(name,registration.Instance);
-                 
+                    container.RegisterInstance(name,registration.Instance);                 
                 }
                 else
                 {
