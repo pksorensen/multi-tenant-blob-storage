@@ -28,8 +28,10 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
         private readonly ITenantContainerNameService _containers;
         private readonly Lazy<Task<KeyPair>> _keyProvider;
 
-        public SharedAccessTokenService(Func<Task<KeyPair>> keysProvider)
+        public SharedAccessTokenService(IStorageAccountResolverService storage, ITenantContainerNameService containers,Func<Task<KeyPair>> keysProvider)
         {
+            _storage = storage;
+            _containers = containers;
             _keyProvider = new Lazy<Task<KeyPair>>(keysProvider);
         }
 

@@ -27,7 +27,7 @@ namespace MultiTenantBlobStorage.Tests
         {
             var defaultvalue = default(Claim);
 
-            var tokens = new SharedAccessTokenService( () => Task.FromResult(new KeyPair{ Primary= GetRandomKey(64), Secondary= GetRandomKey(64)}));
+            var tokens = new SharedAccessTokenService( null,null, () => Task.FromResult(new KeyPair{ Primary= GetRandomKey(64), Secondary= GetRandomKey(64)}));
             var model = new SasTokenGenerationModel{
                 Claims = new List<Claim> { new Claim("exp", "dsadsa"), new Claim("exps", "fdfs"), new Claim("exsp", "sda"), new Claim("exsp", "das") }
             };
