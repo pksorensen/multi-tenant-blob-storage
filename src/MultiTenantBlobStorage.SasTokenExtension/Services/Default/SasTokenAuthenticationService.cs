@@ -52,6 +52,9 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Services.D
             if (!string.IsNullOrWhiteSpace(token))
             {
                 var claims = await _tokenService.CheckSignatureAsync(token);
+                if (!claims.Any())
+                    return false;
+                
                 var prefix = GetValue(claims,"prefix");
                 var resource = GetValue(claims, "resource");
                 var tenant = GetValue(claims, "tenant");
