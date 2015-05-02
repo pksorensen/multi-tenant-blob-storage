@@ -257,7 +257,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                 }
 
 
-                context.Response.Headers.AppendValues("Access-Control-Expose-Headers",
+                context.Response.Headers.AppendCommaSeparatedValues("Access-Control-Expose-Headers",
                     context.Response.Headers.Keys.Where(t => t.IndexOf("x-ms-meta") == 0).ToArray());
 
                 if (response.ContentLength != 0)
