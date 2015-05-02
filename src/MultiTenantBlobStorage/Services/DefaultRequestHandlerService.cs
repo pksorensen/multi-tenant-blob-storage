@@ -164,6 +164,9 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
             req.Headers.CopyTo(Constants.HeaderConstants.ContentType, request, "application/xml");
             req.Headers.CopyTo(Constants.HeaderConstants.Date, request);
             req.Headers.CopyTo(Constants.HeaderConstants.Range, request);
+            req.Headers.CopyTo("Access-Control-Request-Headers", request);
+            req.Headers.CopyTo("Access-Control-Request-Method", request);
+            req.Headers.CopyTo("origin", request);
 
             foreach (var header in req.Headers.Keys.Where(k => k.StartsWith("x-ms")))
             {
@@ -252,7 +255,12 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                     response.Headers.CopyTo(headerKey, context.Response);
                     //context.Response.Headers.Add(headerKey, response.Headers.GetValues(headerKey));
                 }
-
+               
+                var list = new List<string>();
+                if (context.Response.Headers.ContainsKey("Access-Control-Expose-Headers"))
+                    list.AddRange(context.Response.Headers.GetValues("Access-Control-Expose-Headers"));
+                list.AddRange(context.Response.Headers.Keys.Where(t => t.IndexOf("x-ms-meta") == 0));
+                context.Response.Headers.Add("Access-Control-Expose-Headers", list.ToArray());
 
 
                 if (response.ContentLength != 0)
