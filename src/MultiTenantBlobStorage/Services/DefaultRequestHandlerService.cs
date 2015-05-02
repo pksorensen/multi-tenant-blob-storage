@@ -255,13 +255,10 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                     response.Headers.CopyTo(headerKey, context.Response);
                     //context.Response.Headers.Add(headerKey, response.Headers.GetValues(headerKey));
                 }
-               
-                var list = new List<string>();
-                if (context.Response.Headers.ContainsKey("Access-Control-Expose-Headers"))
-                    list.AddRange(context.Response.Headers.GetValues("Access-Control-Expose-Headers"));
-                list.AddRange(context.Response.Headers.Keys.Where(t => t.IndexOf("x-ms-meta") == 0));
-                context.Response.Headers.Add("Access-Control-Expose-Headers", list.ToArray());
 
+
+                context.Response.Headers.AppendValues("Access-Control-Expose-Headers",
+                    context.Response.Headers.Keys.Where(t => t.IndexOf("x-ms-meta") == 0).ToArray());
 
                 if (response.ContentLength != 0)
                 {
