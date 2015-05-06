@@ -39,8 +39,9 @@ namespace Host
                 builder.UseMultiTenantBlobStorage(new MultiTenantBlobStorageOptions
                 {
                     ContainerResourceName = "workset",
-                     DefaultStorageAccount = CloudStorageAccount.Parse("DefaultEndpointsProtocol=https;AccountName=ascendxyzweutest;AccountKey=nIKBpctAluX9ZYRbFHPcAq5g8HGMlreFdHVh/aSABJX6GJbVVoz4oELNljYA9S3knGBO8i6MxxfVwl4pmL+zKA=="),
-
+                    StorageAccountOptions = new StorageAccountOptions{
+                        DefaultStorageAccount = CloudStorageAccount.Parse("DefaultEndpointsProtocol=https;AccountName=ascendxyzweutest;AccountKey=nIKBpctAluX9ZYRbFHPcAq5g8HGMlreFdHVh/aSABJX6GJbVVoz4oELNljYA9S3knGBO8i6MxxfVwl4pmL+zKA==")
+                    },
                     ListBlobOptions = new ListBlobOptions
                     {
                        

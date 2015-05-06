@@ -167,20 +167,21 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
 
             if (model.Claims.Any(c => c.Type == "token"))
             {
-                var tenant = model.Claims.First(c=>c.Type=="tenant");
-                var resource = model.Claims.First(c=>c.Type=="resource");
-                var path = model.Claims.FirstOrDefault(c => c.Type == "prefix") ?? new Claim("prefix","");
+                var tenant =model.Claims.FindFirstOrEmptyValue("tenant");
+                var resource = model.Claims.FindFirstOrEmptyValue("resource");
+                var path = model.Claims.FindFirstOrEmptyValue("prefix");
+                var purpose = model.Claims.FindFirstOrEmptyValue("purpose");
 
-                var account = _storage.GetStorageAccount(tenant.Value);
+                var account = _storage.GetStorageAccount(tenant,purpose);
                 var container = account.CreateCloudBlobClient()
-                    .GetContainerReference(await _containers.GetContainerNameAsync(tenant.Value, resource.Value));
+                    .GetContainerReference(await _containers.GetContainerNameAsync(tenant, resource));
                 
 
                 var tokens = model.Claims.Where(k => k.Type == "token").Select(t => t.Value).ToList();
 
-                if (path.Value.IsPresent())
+                if (path.IsPresent())
                 {
-                    var blob = container.GetBlockBlobReference(path.Value);
+                    var blob = container.GetBlockBlobReference(path);
 
                     await blob.FetchAttributesAsync();
                     if (blob.Metadata.ContainsKey("token"))

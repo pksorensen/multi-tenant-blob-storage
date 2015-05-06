@@ -49,11 +49,9 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
         
 
 
-        public virtual async Task<TenantRoute> ParseRouteDataAsync(IOwinRequest request, MultiTenantBlobStorageOptions options)
+        public virtual Task<TenantRoute> ParseRouteDataAsync(IOwinRequest request, MultiTenantBlobStorageOptions options)
         {
-            var route = await request.Context.ResolveDependency<IRequestTenantResolver>().GetRouteAsync(request);
-
-            return route;
+            return request.Context.ResolveDependency<IRequestTenantResolver>().GetRouteAsync(request);
         }
 
 
@@ -99,7 +97,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
         }
         private async Task SetMetaDataOnDeleteAsync(IOwinContext context, ResourceContext resourceContext)
         {
-            var storage = context.ResolveDependency<IStorageAccountResolverService>().GetStorageAccount(resourceContext.Route.TenantId);
+            var storage = context.ResolveDependency<IStorageAccountResolverService>().GetStorageAccount(resourceContext.Route.TenantId,resourceContext.Route.Purpose);
 
             var metadata = Options.DeleteOptions.SetMetaDataOnDelete();
             var container = storage.CreateCloudBlobClient().GetContainerReference(resourceContext.Route.ContainerName);

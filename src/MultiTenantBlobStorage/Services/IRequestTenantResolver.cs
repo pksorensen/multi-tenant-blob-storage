@@ -9,6 +9,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
     public class TenantRoute
     {
         public string TenantId { get; set; }
+        public string Purpose { get; set; }
         public string Resource { get; set; }
         public string ContainerName { get; set; }
 

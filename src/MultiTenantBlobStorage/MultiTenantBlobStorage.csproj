@@ -108,6 +108,7 @@
     <Compile Include="Events\Base\EventContext.cs" />
     <Compile Include="Events\Base\EventTypes.cs" />
     <Compile Include="Events\Base\Event`1.cs" />
+    <Compile Include="Extensions\ClaimExtensions.cs" />
     <Compile Include="Extensions\IEventServiceExtensions.cs" />
     <Compile Include="Extensions\LogExtensions.cs" />
     <Compile Include="Extensions\OwinExtensions.cs" />

@@ -35,12 +35,19 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
         public TenantRoute Route { get; set; }
         public string Action { get; set; }
 
-        public ResourceAuthorizationContext ResourceAuthorizationContext
+        public ResourceAuthorizationContext GetResourceAuthorizationContext()
         {
-            get
-            {
-                return new ResourceAuthorizationContext(this.User, new []{ new Claim("action", Action)}, new []{new Claim("tenant", Route.TenantId),new Claim("resource", Route.ContainerName??"")});
-            }
+           
+                return new ResourceAuthorizationContext(this.User,
+                    new []{
+                        new Claim("action", Action)
+                    },
+                    new []{
+                        new Claim("tenant", Route.TenantId),
+                        new Claim("resource", Route.ContainerName??""),
+                        new Claim("purpose",Route.Purpose ?? ""),
+                    }.Where(v=>v.Value.IsPresent()));
+            
         }
 
         public ClaimsPrincipal User { get; set; }
@@ -85,9 +92,9 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
 
             var authService = context.ResolveDependency<IAuthenticationService>();
             resourceContext.User = context.Authentication.User = await authService.AuthenticateRequestAsync(context.Request, options) ?? new ClaimsPrincipal();
-           
 
-            if ( await authService.SkipAuthorizationManagerAsync(context, resourceContext) || await context.CheckAccessAsync(resourceContext.ResourceAuthorizationContext))
+            ResourceAuthorizationContext resourceAuthContext=null;
+            if (await authService.SkipAuthorizationManagerAsync(context, resourceContext) || await context.CheckAccessAsync(resourceAuthContext = resourceContext.GetResourceAuthorizationContext()))
             {
 
                 await requestHandler.HandleAsync(context, resourceContext);
@@ -97,7 +104,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
             else
             {
 
-                HandleUnauthorizedRequest( context, resourceContext.ResourceAuthorizationContext);
+                HandleUnauthorizedRequest(context, resourceAuthContext);
             }
 
            // context.Response.Body.Flush();
@@ -128,7 +135,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
 
                 if (!(string.IsNullOrWhiteSpace(sig) || string.IsNullOrWhiteSpace(expire)))
                 {
-                    var account = context.ResolveDependency<IStorageAccountResolverService>().GetStorageAccount(resourceContext.Route.TenantId);
+                    var account = context.ResolveDependency<IStorageAccountResolverService>().GetStorageAccount(resourceContext.Route.TenantId,resourceContext.Route.Purpose);
 
                     string signature = "";
                     using (HMACSHA256 hmacSha256 = new HMACSHA256(Convert.FromBase64String(account.Credentials.ExportBase64EncodedKey())))

@@ -55,9 +55,10 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Services.D
                 if (!claims.Any())
                     return false;
                 
-                var prefix = GetValue(claims,"prefix");
-                var resource = GetValue(claims, "resource");
-                var tenant = GetValue(claims, "tenant");
+                var prefix = claims.FindFirstOrEmptyValue("prefix");
+                var resource = claims.FindFirstOrEmptyValue( "resource");
+                var tenant = claims.FindFirstOrEmptyValue("tenant");
+                var purpose = claims.FindFirstOrEmptyValue("purpose");
 
                 flag &= resourceContext.Route.Path.StartsWith(prefix);
 
@@ -74,7 +75,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Services.D
                  var tokenids = claims.Where(t => t.Type == "token").ToArray();
                  if (tokenids.Any())
                  {
-                     var tokens = await GetTokenIdsAsync(prefix, resource, tenant);
+                     var tokens = await GetTokenIdsAsync(tenant,purpose,resource, prefix);
                      RevokeTokens = tokenids.Where(t => tokens.IndexOf(t.Value) == -1).Select(t => t.Value).ToArray();
 
                  }
@@ -85,11 +86,11 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Services.D
 
         }
 
-        protected virtual async Task<string> GetTokenIdsAsync(string prefix, string resource, string tenant)
+        protected virtual async Task<string> GetTokenIdsAsync(string tenant,string purpose, string resource,string prefix)
         {
             IDictionary<string, string> md;
 
-            var blobClient = _storage.GetStorageAccount(tenant).CreateCloudBlobClient();
+            var blobClient = _storage.GetStorageAccount(tenant,purpose).CreateCloudBlobClient();
             var blobContainer = blobClient.GetContainerReference(await _containers.GetContainerNameAsync(tenant, resource));
 
             if (prefix.IsPresent())
@@ -113,12 +114,12 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Services.D
 
        
 
-        private static string GetValue(IEnumerable<Claim> claims,string type)
-        {
-            var prefix = claims.FirstOrDefault(c => c.Type ==type);
-            if (prefix == null)
-                return "";
-            return prefix.Value;
-        }
+        //private static string GetValue(IEnumerable<Claim> claims,string type)
+        //{
+        //    var prefix = claims.FirstOrDefault(c => c.Type ==type);
+        //    if (prefix == null)
+        //        return "";
+        //    return prefix.Value;
+        //}
     }
 }
