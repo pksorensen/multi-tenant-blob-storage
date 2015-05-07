@@ -15,10 +15,15 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
         static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
    //     internal List<Registration<IRequestHandler>> Handlers = new List<Registration<IRequestHandler>>();
         internal List<Registration> Registrations = new List<Registration>();
+
         public Registration<ITenantContainerNameService> TenantContainerNameService { get; set; }
+
         public Registration<IStorageAccountResolverService> StorageAccountResolver { get; set; }
+
         public Registration<IResourceAuthorizationManager> AuthorizationManager { get; set; }
+
         public Registration<IAuthenticationService> AuthenticationService { get; set; }
+
         public Registration<IRequestTenantResolver> RequestTenantResolver { get; set; }
 
         public void RegisterHandler<T>(string name = null) where T : IRequestHandler
