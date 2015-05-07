@@ -18,7 +18,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
         public Registration<ITenantContainerNameService> TenantContainerNameService { get; set; }
         public Registration<IStorageAccountResolverService> StorageAccountResolver { get; set; }
         public Registration<IResourceAuthorizationManager> AuthorizationManager { get; set; }
-        public Registration<IAuthenticationService> AuthenticationService { get; set; } 
+        public Registration<IAuthenticationService> AuthenticationService { get; set; }
+        public Registration<IRequestTenantResolver> RequestTenantResolver { get; set; }
 
         public void RegisterHandler<T>(string name = null) where T : IRequestHandler
         {
@@ -28,5 +29,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
         {
             this.Registrations.Add(registration);
         }
+
+       
     }
 }

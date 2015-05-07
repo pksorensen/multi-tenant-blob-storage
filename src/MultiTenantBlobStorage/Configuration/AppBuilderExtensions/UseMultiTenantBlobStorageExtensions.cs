@@ -48,11 +48,12 @@ namespace Owin
             container.RegisterDefaultType<IStorageAccountResolverService, DefaultStorageAccountResolverService>(fact.StorageAccountResolver);
             container.RegisterDefaultType<IResourceAuthorizationManager, DefaultResourceAuthorizationManager>(fact.AuthorizationManager);
             container.RegisterDefaultType<IAuthenticationService, DefaultAuthenticationService>(fact.AuthenticationService);
+            container.RegisterDefaultType<IRequestTenantResolver, DefaultRequestTenantResolver>(fact.RequestTenantResolver); 
 
             foreach (var registration in fact.Registrations)
                 container.Register(registration);
 
-            container.RegisterType<IRequestTenantResolver, DefaultRequestTenantResolver>();           
+           // container.RegisterType<IRequestTenantResolver, DefaultRequestTenantResolver>();           
             container.RegisterType<IRequestHandlerService, DefaultRequestHandlerService>();
             container.RegisterType<ResourceContext>(new HierarchicalLifetimeManager());
             
