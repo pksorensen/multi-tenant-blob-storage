@@ -16,7 +16,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
             ContainerNameService = s1;
             StorageAccountResolverService = s2;
         }
-        public async Task<TenantRoute> GetRouteAsync(Microsoft.Owin.IOwinRequest owinRequest)
+        public virtual async Task<TenantRoute> GetRouteAsync(Microsoft.Owin.IOwinRequest owinRequest)
         {
             var parts = owinRequest.Path.Value.Trim('/').Split('/');
 
