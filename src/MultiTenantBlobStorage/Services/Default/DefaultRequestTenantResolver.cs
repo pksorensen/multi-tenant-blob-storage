@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Owin;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,6 +17,15 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
             ContainerNameService = s1;
             StorageAccountResolverService = s2;
         }
+        public virtual string GetPurpose(IOwinRequest owinRequest)
+        {
+              string[] purpose;
+            owinRequest.Headers.TryGetValue("x-ms-purpose", out purpose);
+            if (purpose != null && purpose.Any())
+                return purpose.First();
+
+            return "";
+        }
         public virtual async Task<TenantRoute> GetRouteAsync(Microsoft.Owin.IOwinRequest owinRequest)
         {
             var parts = owinRequest.Path.Value.Trim('/').Split('/');
@@ -27,12 +37,10 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
             if (parts.Length > 1)
                 route.Resource = parts[1];
 
-            route.ContainerName = await ContainerNameService.GetContainerNameAsync(route.TenantId,route.Resource);
+            route.Purpose = GetPurpose(owinRequest);
+            route.ContainerName = await ContainerNameService.GetContainerNameAsync(route.TenantId,route.Purpose,route.Resource);
             route.Host = await StorageAccountResolverService.GetBlobEndpointAsync(route);
-            string[] purpose;
-            owinRequest.Headers.TryGetValue("x-ms-purpose", out purpose);
-            if (purpose != null && purpose.Any())
-                route.Purpose = purpose.First();
+          
             
             
             

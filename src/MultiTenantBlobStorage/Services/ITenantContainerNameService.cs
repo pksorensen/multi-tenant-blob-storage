@@ -10,6 +10,6 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
     {
 
 
-        Task<string> GetContainerNameAsync(string tenant, string resource);
+        Task<string> GetContainerNameAsync(string tenant,  string purpose,string resource);
     }
 }

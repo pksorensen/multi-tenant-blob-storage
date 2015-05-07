@@ -174,7 +174,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
 
                 var account = _storage.GetStorageAccount(tenant,purpose);
                 var container = account.CreateCloudBlobClient()
-                    .GetContainerReference(await _containers.GetContainerNameAsync(tenant, resource));
+                    .GetContainerReference(await _containers.GetContainerNameAsync(tenant, purpose, resource));
                 
 
                 var tokens = model.Claims.Where(k => k.Type == "token").Select(t => t.Value).ToList();
