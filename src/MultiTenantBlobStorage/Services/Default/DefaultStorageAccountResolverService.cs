@@ -27,7 +27,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
         public virtual Task<string> GetBlobEndpointAsync(TenantRoute route)
         {
             
-            return Task.FromResult(GetStorageAccount(route.TenantId).BlobEndpoint.AbsoluteUri);
+            return Task.FromResult(GetStorageAccount(route.TenantId,route.Purpose).BlobEndpoint.AbsoluteUri);
         }
 
         public virtual Task SignRequestAsync(HttpWebRequest request, TenantRoute route)
