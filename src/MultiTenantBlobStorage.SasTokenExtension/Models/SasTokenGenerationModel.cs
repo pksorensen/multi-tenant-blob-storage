@@ -15,12 +15,12 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Models
         {
             Claims = new List<Claim>();
         }
-        public SasTokenGenerationModel(string tenant,string resource,string path = null)
+        public SasTokenGenerationModel(string tenant,string purpose, string resource,string path = null)
         {
             Claims = new List<Claim> {
-            new Claim("tenant",tenant),
-            new Claim("resource",resource),
-            
+                new Claim("tenant",tenant),
+                new Claim("resource",resource),
+                new Claim("purpose",purpose),            
             };
             if (path.IsPresent())
                 Claims.Add(new Claim("prefix", path));
