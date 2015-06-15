@@ -19,24 +19,23 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
             Options = options;
         }
          
-        public virtual CloudStorageAccount GetStorageAccount(string tenant, string purpose=null)
+        public virtual Task<CloudStorageAccount> GetStorageAccountAsync(string tenant, string purpose=null)
         {
-            return Options.StorageAccountOptions.DefaultStorageAccount;
+            return Task.FromResult(Options.StorageAccountOptions.DefaultStorageAccount);
         }
         
-        public virtual Task<string> GetBlobEndpointAsync(TenantRoute route)
+        public virtual async Task<string> GetBlobEndpointAsync(TenantRoute route)
         {
-            
-            return Task.FromResult(GetStorageAccount(route.TenantId,route.Purpose).BlobEndpoint.AbsoluteUri);
+            var account = await GetStorageAccountAsync(route.TenantId,route.Purpose);
+            return account.BlobEndpoint.AbsoluteUri;
         }
 
-        public virtual Task SignRequestAsync(HttpWebRequest request, TenantRoute route)
+        public virtual async Task SignRequestAsync(HttpWebRequest request, TenantRoute route)
         {
-            var account = GetStorageAccount(route.TenantId,route.Purpose);
+            var account = await GetStorageAccountAsync(route.TenantId,route.Purpose);
             var a = new SharedKeyAuthenticationHandler(SharedKeyCanonicalizer.Instance, account.Credentials, account.Credentials.AccountName);
             a.SignRequest(request, null);
-            return Task.FromResult(0);
-
+           
         }
     }
 }

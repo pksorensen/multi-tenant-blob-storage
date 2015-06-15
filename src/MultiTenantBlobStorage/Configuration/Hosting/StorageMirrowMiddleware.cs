@@ -112,7 +112,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
            
         }
 
-        private static bool CheckForSasUri(OwinContext context, ResourceContext resourceContext)
+        private static async Task<bool> CheckForSasUriAsync(OwinContext context, ResourceContext resourceContext)
         {
             if (!resourceContext.User.Identities.Any())
             {
@@ -135,7 +135,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
 
                 if (!(string.IsNullOrWhiteSpace(sig) || string.IsNullOrWhiteSpace(expire)))
                 {
-                    var account = context.ResolveDependency<IStorageAccountResolverService>().GetStorageAccount(resourceContext.Route.TenantId,resourceContext.Route.Purpose);
+                    var account = await context.ResolveDependency<IStorageAccountResolverService>().GetStorageAccountAsync(resourceContext.Route.TenantId,resourceContext.Route.Purpose);
 
                     string signature = "";
                     using (HMACSHA256 hmacSha256 = new HMACSHA256(Convert.FromBase64String(account.Credentials.ExportBase64EncodedKey())))

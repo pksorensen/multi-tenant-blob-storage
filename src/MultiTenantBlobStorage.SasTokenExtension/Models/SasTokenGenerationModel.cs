@@ -31,6 +31,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Models
 
     public static class SasTokenGenerationModelExtensions
     {
+       
         public static SasTokenGenerationModel ExpireAt(this SasTokenGenerationModel model, DateTimeOffset expire)
         {
             model.Claims.Add(new Claim("exp", expire.ToString("R", CultureInfo.InvariantCulture)));

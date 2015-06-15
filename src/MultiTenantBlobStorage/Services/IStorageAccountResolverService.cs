@@ -10,7 +10,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 {
     public interface IStorageAccountResolverService
     {
-        CloudStorageAccount GetStorageAccount(string tenant, string purpose = null);
+        Task<CloudStorageAccount> GetStorageAccountAsync(string tenant, string purpose = null);
         Task SignRequestAsync(HttpWebRequest request, TenantRoute tenantRoute);
         Task<string> GetBlobEndpointAsync(TenantRoute tenantRoute);
     }

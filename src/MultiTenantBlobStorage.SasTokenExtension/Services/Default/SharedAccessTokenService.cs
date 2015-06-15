@@ -172,7 +172,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
                 var path = model.Claims.FindFirstOrEmptyValue("prefix");
                 var purpose = model.Claims.FindFirstOrEmptyValue("purpose");
 
-                var account = _storage.GetStorageAccount(tenant,purpose);
+                var account = await _storage.GetStorageAccountAsync(tenant,purpose);
                 var container = account.CreateCloudBlobClient()
                     .GetContainerReference(await _containers.GetContainerNameAsync(tenant, purpose, resource));
                 

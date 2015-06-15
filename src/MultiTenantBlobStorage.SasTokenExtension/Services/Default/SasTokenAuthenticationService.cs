@@ -90,7 +90,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Services.D
         {
             IDictionary<string, string> md;
 
-            var blobClient = _storage.GetStorageAccount(tenant,purpose).CreateCloudBlobClient();
+            var account = await  _storage.GetStorageAccountAsync(tenant,purpose);
+            var blobClient = account.CreateCloudBlobClient();
             var blobContainer = blobClient.GetContainerReference(await _containers.GetContainerNameAsync(tenant,purpose, resource));
 
             if (prefix.IsPresent())
