@@ -15,11 +15,14 @@ using System.Text;
 using System.Threading.Tasks;
 using SInnovations.Azure.MultiTenantBlobStorage.Extensions;
 using SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Models;
+using SInnovations.Azure.MultiTenantBlobStorage.Logging;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension
 {
     public class CompSasTokenHandler : IRequestHandler
     {
+        private static ILog Logger = LogProvider.GetCurrentClassLogger();
+
         public const string BlobCompSas = Constants.Actions.BlobGet + "_sas";
         public const string ContainerCompSas = Constants.Actions.ContainerGet + "_sas";
 
@@ -40,11 +43,12 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension
        
         public async Task<bool> OnBeforeHandleRequestAsync(IOwinContext context, ResourceContext resourceContext)
         {
-          
-
+            Logger.InfoFormat("Sas token generation begin for: {0}", resourceContext.Action);
            
             var model = await _tokenservice.GetTokenModelAsync(context, resourceContext);
             var token = string.Format("?token={0}", await _tokenservice.GetTokenAsync(model));
+
+            Logger.InfoFormat("Sas token generation completed for: {0}", resourceContext.Action);
                       
 
             context.Response.StatusCode = 200;
@@ -67,6 +71,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension
 
         public Task OnAfterHandleRequestAsync(Microsoft.Owin.IOwinContext context, Configuration.Hosting.ResourceContext resourceContext)
         {
+            Logger.Warn("Entered not implemeted section");
             throw new NotImplementedException();
         }
     }

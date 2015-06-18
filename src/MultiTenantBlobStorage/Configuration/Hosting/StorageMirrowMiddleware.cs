@@ -70,26 +70,22 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration.Hosting
         public async Task Invoke(IDictionary<string, object> env)
         {
             var context = new OwinContext(env);
-            
-            context.Response.OnSendingHeaders((obj) =>
-            {
-               // Trace.WriteLine("SENDING HEADERS");
-            }, null);
-            
+                       
             var resourceContext =context.ResolveDependency<ResourceContext>();
             var options = context.ResolveDependency<MultiTenantBlobStorageOptions>();
-            var requestHandler = context.ResolveDependency<IRequestHandlerService>();
-          
-            
-         //   requestHandler.ListBlobsStreamingTransform = TestStreamTransform;
 
-            resourceContext.Route = await requestHandler.ParseRouteDataAsync(context.Request, options);
+            resourceContext.Route = await context.ResolveDependency<IRequestTenantResolver>().GetRouteAsync(context.Request);
+            
             resourceContext.Action = string.Format("{0}_{1}{2}",
                 resourceContext.Route.Path.IsMissing() ? (resourceContext.Route.Resource.IsMissing() ? Constants.Actions.TenantPrefix : Constants.Actions.ContainerPrefix) : Constants.Actions.BlobPrefix,
                 context.Request.Method.ToLower(),
                 context.Request.Query["comp"].IsPresent() ? "_" + context.Request.Query["comp"] : "");
-           
 
+
+
+
+
+            var requestHandler = context.ResolveDependency<IRequestHandlerService>();
             var authService = context.ResolveDependency<IAuthenticationService>();
             resourceContext.User = context.Authentication.User = await authService.AuthenticateRequestAsync(context.Request, options) ?? new ClaimsPrincipal();
 

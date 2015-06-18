@@ -18,14 +18,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
      
        
 
-        /// <summary>
-        /// Parse the request route data
-        /// </summary>
-        /// <param name="request"></param>
-        /// <param name="options"></param>
-        /// <returns></returns>
-        Task<TenantRoute> ParseRouteDataAsync(IOwinRequest request, MultiTenantBlobStorageOptions options);
-
+    
         /// <summary>
         /// Handles the request
         /// </summary>

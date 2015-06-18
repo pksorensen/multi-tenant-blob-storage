@@ -46,21 +46,10 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 
 
 
-        
 
-
-        public virtual Task<TenantRoute> ParseRouteDataAsync(IOwinRequest request, MultiTenantBlobStorageOptions options)
-        {
-            return request.Context.ResolveDependency<IRequestTenantResolver>().GetRouteAsync(request);
-        }
-
-
-        public async Task HandleAsync(IOwinContext context, ResourceContext resourceContext)
+          public async Task HandleAsync(IOwinContext context, ResourceContext resourceContext)
         {
             var requestOption = new RequestOptions(context.Request);
-
-            
-            
 
             if (resourceContext.Action.EndsWith("delete") && Options.DeleteOptions.SetMetaDataOnDelete != null)
             {

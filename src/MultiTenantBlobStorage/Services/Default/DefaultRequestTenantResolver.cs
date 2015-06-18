@@ -41,10 +41,6 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
             route.ContainerName = await ContainerNameService.GetContainerNameAsync(route.TenantId,route.Purpose,route.Resource);
             route.Host = await StorageAccountResolverService.GetBlobEndpointAsync(route);
           
-            
-            
-            
-                
                 
             var resourceId = string.Format("{0}/{1}",route.TenantId,  route.Resource);
             var idx = owinRequest.Uri.AbsoluteUri.IndexOf(resourceId) + resourceId.Length;
