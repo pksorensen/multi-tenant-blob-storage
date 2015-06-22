@@ -284,53 +284,55 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
             readerSettings.Async = true;
             var reader = XmlReader.Create(incoming, readerSettings);
             var state = listOptions.StateInitializer == null ? null : listOptions.StateInitializer();
-            var writer = XmlWriter.Create(outgoing, new XmlWriterSettings { Async = true });
-
-            while (await reader.ReadAsync())
+            using (var writer = XmlWriter.Create(outgoing, new XmlWriterSettings { Async = true, CloseOutput = false }))
             {
-                if (parseInfo.Any(a => a == reader.Name))
+
+                while (await reader.ReadAsync())
                 {
-                    //  jsonWriter.WriteStartArray();
-                    while (parseInfo.Any(a => a == reader.Name))
+                    if (parseInfo.Any(a => a == reader.Name))
                     {
-                        var name = reader.Name;
-                        var node = XNode.ReadFrom(reader);
-                        var el = (XElement)node;
-
-                        if (listOptions.BlobListFilter == null || listOptions.BlobListFilter(el, state))
+                        //  jsonWriter.WriteStartArray();
+                        while (parseInfo.Any(a => a == reader.Name))
                         {
-                            var nameEl = el.Element("Name");
+                            var name = reader.Name;
+                            var node = XNode.ReadFrom(reader);
+                            var el = (XElement)node;
 
-                            if (tenantNameTransform != null)
+                            if (listOptions.BlobListFilter == null || listOptions.BlobListFilter(el, state))
                             {
+                                var nameEl = el.Element("Name");
 
-                                nameEl.SetValue(tenantNameTransform(nameEl.Value));
+                                if (tenantNameTransform != null)
+                                {
+
+                                    nameEl.SetValue(tenantNameTransform(nameEl.Value));
+                                }
+                                await writer.WriteNodeAsync(node.CreateReader(), true);
+                                //  node.WriteTo(writer);
+                                //  writeJson(jsonWriter, node.CreateReader(), name);
                             }
-                            await writer.WriteNodeAsync(node.CreateReader(), true);
-                            //  node.WriteTo(writer);
-                            //  writeJson(jsonWriter, node.CreateReader(), name);
+                            //serializer.Serialize(jsonWriter, node);
                         }
-                        //serializer.Serialize(jsonWriter, node);
-                    }
-                    if (listOptions.BlobListFilterFinalizer != null)
-                    {
-                        foreach (var el in listOptions.BlobListFilterFinalizer(state))
+                        if (listOptions.BlobListFilterFinalizer != null)
                         {
-                            await writer.WriteNodeAsync(el.CreateReader(), true);
-                            //  writeJson(jsonWriter, el.CreateReader(), el.Name.LocalName);
+                            foreach (var el in listOptions.BlobListFilterFinalizer(state))
+                            {
+                                await writer.WriteNodeAsync(el.CreateReader(), true);
+                                //  writeJson(jsonWriter, el.CreateReader(), el.Name.LocalName);
+                            }
                         }
+                        //   jsonWriter.WriteEndArray();
+
                     }
-                    //   jsonWriter.WriteEndArray();
+                    //await writer.start(reader, true);
+                    //  WriteJsonElement(reader, jsonWriter, "EnumerationResults");
+
+                    WriteShallowNode(reader, writer);
+
 
                 }
-                //await writer.start(reader, true);
-                //  WriteJsonElement(reader, jsonWriter, "EnumerationResults");
-
-                WriteShallowNode(reader, writer);
-
-
+                writer.Flush();
             }
-            writer.Flush();
 
         }
         static void WriteShallowNode(XmlReader reader, XmlWriter writer)
@@ -531,24 +533,33 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                 }
 
             }
-
-            if (resourceContext.Action == Constants.Actions.ListResources)
+            
             {
-                await WriteXmlAsync(stream, context.Response.Body, (s) => s.Substring(resourceContext.Route.ContainerName.Length + 1), Options.ListBlobOptions, "Container");
 
-            }
-            else
-            {
-                byte[] buffer = new byte[81920];
-                int count;
-                while ((count = await stream.ReadAsync(buffer, 0, buffer.Length, context.Request.CallCancelled)) != 0)
+                if (resourceContext.Action == Constants.Actions.ListResources)
                 {
-                    context.Request.CallCancelled.ThrowIfCancellationRequested();
-
-                    await context.Response.Body.WriteAsync(buffer, 0, count, context.Request.CallCancelled);
+                    await WriteXmlAsync(stream, context.Response.Body, (s) => s.Substring(resourceContext.Route.ContainerName.Length + 1), Options.ListBlobOptions, "Container");
+                    return;
                 }
-                await context.Response.Body.FlushAsync();
+                else if (resourceContext.Action == Constants.Actions.ListBlobs)
+                {
+
+                    await WriteXmlAsync(stream, context.Response.Body, null, Options.ListBlobOptions, "Blob", "BlobPrefix");
+                    return;
+                }
+               
             }
+
+            //If nothing matched above, asume data and copy it raw.
+            byte[] buffer = new byte[81920];
+            int count;
+            while ((count = await stream.ReadAsync(buffer, 0, buffer.Length, context.Request.CallCancelled)) != 0)
+            {
+                context.Request.CallCancelled.ThrowIfCancellationRequested();
+
+                await context.Response.Body.WriteAsync(buffer, 0, count, context.Request.CallCancelled);
+            }
+            await context.Response.Body.FlushAsync();
         }
         //  static List<string> list = new List<string>();
         protected virtual async Task ForwardIncomingRequestStreamAsync(IOwinContext context, HttpWebRequest request)
