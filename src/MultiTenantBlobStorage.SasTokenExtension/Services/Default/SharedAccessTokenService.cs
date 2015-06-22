@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SInnovations.Azure.MultiTenantBlobStorage.Extensions;
 using SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Models;
+using SInnovations.Azure.MultiTenantBlobStorage.Logging;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
 {
@@ -23,6 +24,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
     
     public class SharedAccessTokenService : ISharedAccessTokenService
     {
+        private readonly ILog Logger = LogProvider.GetCurrentClassLogger();
 
         private readonly IStorageAccountResolverService _storage;
         private readonly ITenantContainerNameService _containers;
@@ -35,8 +37,10 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
             _keyProvider = new Lazy<Task<KeyPair>>(keysProvider);
         }
 
-        public static SasTokenGenerationModel GetModel(IOwinRequest request)
+        public SasTokenGenerationModel GetModel(IOwinRequest request)
         {
+         
+            
             string[] expires,noexpire;
             DateTimeOffset? expire =
                 request.Headers.TryGetValue("x-ms-token-exp", out expires) && expires.Length == 1 ?
@@ -67,11 +71,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
         {
             var model = GetModel(context.Request);
 
-            
-            //notbefore 
-
             model.Claims.Add(new Claim("nbf", DateTimeOffset.UtcNow.ToString("R", CultureInfo.InvariantCulture)));
-
             model.Claims.Add(new Claim("role", "read"));
             model.Claims.Add(new Claim("role", "write"));
             model.Claims.Add(new Claim("tenant", resourceContext.Route.TenantId));
@@ -81,7 +81,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
                 model.Claims.Add(new Claim("prefix", resourceContext.Route.Path));
 
             }
-
+            Logger.InfoFormat("Creating SasTokenGenerationModel: uri={0}, claims={1}", context.Request.Uri, string.Join(", ", model.Claims.Select(c => c.Type)));
+          
             return Task.FromResult(model);
         }
         public virtual async Task<IEnumerable<Claim>> CheckSignatureAsync(string token)
@@ -105,34 +106,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
                 return claims;
 
             return Enumerable.Empty<Claim>();
-            //
-
-
-            //var claims = 
-
-            //var signature = parts[2];
-            //JToken expToken, nbfToken,roleToken;
-            //if (!(claims.TryGetValue("exp", out expToken) && expToken.Type == JTokenType.String))
-            //    return false;
-            //if (!(claims.TryGetValue("nbf", out nbfToken) && nbfToken.Type == JTokenType.String))
-            //    return false;
-            //if (!(claims.TryGetValue("role", out roleToken) && roleToken.Type == JTokenType.Array))
-            //    return false;
-
-
-            //var exp = DateTimeOffset.Parse(expToken.ToString(), CultureInfo.InvariantCulture);
-            //String expInRfc1123Format = exp.ToString("R", CultureInfo.InvariantCulture);
-            //var nbf = DateTimeOffset.Parse(nbfToken.ToString(), CultureInfo.InvariantCulture);
-            //String nbfInRfc1123Format = nbf.ToString("R", CultureInfo.InvariantCulture);
-            //var role = roleToken.ToObject<string[]>();
-
-
-
-
-
-
-
-            //return true;
+           
         }
 
         private static string GetBase64Value(string part)

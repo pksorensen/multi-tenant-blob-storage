@@ -47,7 +47,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 
 
 
-          public async Task HandleAsync(IOwinContext context, ResourceContext resourceContext)
+        public async Task HandleAsync(IOwinContext context, ResourceContext resourceContext)
         {
             var requestOption = new RequestOptions(context.Request);
 
@@ -86,7 +86,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
         }
         private async Task SetMetaDataOnDeleteAsync(IOwinContext context, ResourceContext resourceContext)
         {
-            var account = await context.ResolveDependency<IStorageAccountResolverService>().GetStorageAccountAsync(resourceContext.Route.TenantId,resourceContext.Route.Purpose);
+            var account = await context.ResolveDependency<IStorageAccountResolverService>().GetStorageAccountAsync(resourceContext.Route.TenantId, resourceContext.Route.Purpose);
 
             var metadata = Options.DeleteOptions.SetMetaDataOnDelete();
             var container = account.CreateCloudBlobClient().GetContainerReference(resourceContext.Route.ContainerName);
@@ -217,7 +217,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
             var blobAuthenticationService = context.ResolveDependency<IStorageAccountResolverService>();
             await blobAuthenticationService.SignRequestAsync(request, resourceContext.Route);
 
-          
+
 
 
             await ForwardIncomingRequestStreamAsync(context, request);
@@ -225,7 +225,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
             using (HttpWebResponse response = await GetResponseAsync(request))
             {
 
-                if (!await _authService.BlobStorageResponseAuthorizedAsync(context,resourceContext, response))
+                if (!await _authService.BlobStorageResponseAuthorizedAsync(context, resourceContext, response))
                 {
                     context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
                     context.Response.ReasonPhrase = "Unauthorized";
@@ -234,7 +234,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                 context.Response.ReasonPhrase = response.StatusDescription;
                 context.Response.StatusCode = (int)response.StatusCode;
 
-              
+
 
 
                 foreach (var headerKey in response.Headers.AllKeys)
@@ -277,6 +277,112 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                 WriteJsonElement(reader, writer, root);
             }
         }
+        public static async Task WriteXmlAsync(Stream incoming, Stream outgoing, Func<string, string> tenantNameTransform, ListOptions listOptions, params string[] parseInfo)
+        {
+            XmlReaderSettings readerSettings = new XmlReaderSettings();
+            readerSettings.IgnoreWhitespace = false;
+            readerSettings.Async = true;
+            var reader = XmlReader.Create(incoming, readerSettings);
+            var state = listOptions.StateInitializer == null ? null : listOptions.StateInitializer();
+            var writer = XmlWriter.Create(outgoing, new XmlWriterSettings { Async = true });
+
+            while (await reader.ReadAsync())
+            {
+                if (parseInfo.Any(a => a == reader.Name))
+                {
+                    //  jsonWriter.WriteStartArray();
+                    while (parseInfo.Any(a => a == reader.Name))
+                    {
+                        var name = reader.Name;
+                        var node = XNode.ReadFrom(reader);
+                        var el = (XElement)node;
+
+                        if (listOptions.BlobListFilter == null || listOptions.BlobListFilter(el, state))
+                        {
+                            var nameEl = el.Element("Name");
+
+                            if (tenantNameTransform != null)
+                            {
+
+                                nameEl.SetValue(tenantNameTransform(nameEl.Value));
+                            }
+                            await writer.WriteNodeAsync(node.CreateReader(), true);
+                            //  node.WriteTo(writer);
+                            //  writeJson(jsonWriter, node.CreateReader(), name);
+                        }
+                        //serializer.Serialize(jsonWriter, node);
+                    }
+                    if (listOptions.BlobListFilterFinalizer != null)
+                    {
+                        foreach (var el in listOptions.BlobListFilterFinalizer(state))
+                        {
+                            await writer.WriteNodeAsync(el.CreateReader(), true);
+                            //  writeJson(jsonWriter, el.CreateReader(), el.Name.LocalName);
+                        }
+                    }
+                    //   jsonWriter.WriteEndArray();
+
+                }
+                //await writer.start(reader, true);
+                //  WriteJsonElement(reader, jsonWriter, "EnumerationResults");
+
+                WriteShallowNode(reader, writer);
+
+
+            }
+            writer.Flush();
+
+        }
+        static void WriteShallowNode(XmlReader reader, XmlWriter writer)
+        {
+            if (reader == null)
+            {
+                throw new ArgumentNullException("reader");
+            }
+            if (writer == null)
+            {
+                throw new ArgumentNullException("writer");
+            }
+
+            switch (reader.NodeType)
+            {
+                case XmlNodeType.Element:
+                    writer.WriteStartElement(reader.Prefix, reader.LocalName, reader.NamespaceURI);
+                    writer.WriteAttributes(reader, true);
+                    if (reader.IsEmptyElement)
+                    {
+                       
+                        writer.WriteEndElement();
+                    }
+                    break;
+                case XmlNodeType.Text:
+                    writer.WriteString(reader.Value);
+                    break;
+                case XmlNodeType.Whitespace:
+                case XmlNodeType.SignificantWhitespace:
+                    writer.WriteWhitespace(reader.Value);
+                    break;
+                case XmlNodeType.CDATA:
+                    writer.WriteCData(reader.Value);
+                    break;
+                case XmlNodeType.EntityReference:
+                    writer.WriteEntityRef(reader.Name);
+                    break;
+                case XmlNodeType.XmlDeclaration:
+                case XmlNodeType.ProcessingInstruction:
+                    writer.WriteProcessingInstruction(reader.Name, reader.Value);
+                    break;
+                case XmlNodeType.DocumentType:
+                    writer.WriteDocType(reader.Name, reader.GetAttribute("PUBLIC"), reader.GetAttribute("SYSTEM"), reader.Value);
+                    break;
+                case XmlNodeType.Comment:
+                    writer.WriteComment(reader.Value);
+                    break;
+                case XmlNodeType.EndElement:
+                    writer.WriteFullEndElement();
+                    break;
+            }
+        }
         private async Task WriteJsonAsync(Stream incoming, Stream outgoing, Func<string, string> tenantNameTransform, ListOptions listOptions, params string[] parseInfo)
         {
             XmlReaderSettings readerSettings = new XmlReaderSettings();
@@ -314,9 +420,9 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                         }
                         //serializer.Serialize(jsonWriter, node);
                     }
-                    if(listOptions.BlobListFilterFinalizer != null)
+                    if (listOptions.BlobListFilterFinalizer != null)
                     {
-                        foreach(var el in listOptions.BlobListFilterFinalizer(state))
+                        foreach (var el in listOptions.BlobListFilterFinalizer(state))
                         {
                             writeJson(jsonWriter, el.CreateReader(), el.Name.LocalName);
                         }
@@ -426,7 +532,12 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 
             }
 
+            if (resourceContext.Action == Constants.Actions.ListResources)
+            {
+                await WriteXmlAsync(stream, context.Response.Body, (s) => s.Substring(resourceContext.Route.ContainerName.Length + 1), Options.ListBlobOptions, "Container");
 
+            }
+            else
             {
                 byte[] buffer = new byte[81920];
                 int count;
@@ -439,54 +550,54 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                 await context.Response.Body.FlushAsync();
             }
         }
-      //  static List<string> list = new List<string>();
+        //  static List<string> list = new List<string>();
         protected virtual async Task ForwardIncomingRequestStreamAsync(IOwinContext context, HttpWebRequest request)
         {
-          //  Trace.TraceInformation("Forward: {0},{1}", context.Request.GetHashCode(), context.Request.Body.GetHashCode());
-          
-            
+            //  Trace.TraceInformation("Forward: {0},{1}", context.Request.GetHashCode(), context.Request.Body.GetHashCode());
+
+
             if (request.ContentLength > 0)
             {
-               // var counter = 0;
-               //var id = Guid.NewGuid();
-               // try
-               // {
-                   
+                // var counter = 0;
+                //var id = Guid.NewGuid();
+                // try
+                // {
 
-                    using(var stream = await request.GetRequestStreamAsync())
+
+                using (var stream = await request.GetRequestStreamAsync())
+                {
+                    try
                     {
-                        try
+                        //  Trace.TraceInformation("{0} - Request Info: {1}/{2}", id,context.Request.Headers.Get("content-length"), context.Request.Body.Length);
+                        byte[] buffer = new byte[81920];
+                        int count;
+                        while ((count = await context.Request.Body.ReadAsync(buffer, 0, buffer.Length, context.Request.CallCancelled)) != 0)
                         {
-                          //  Trace.TraceInformation("{0} - Request Info: {1}/{2}", id,context.Request.Headers.Get("content-length"), context.Request.Body.Length);
-                            byte[] buffer = new byte[81920];
-                            int count;
-                            while ((count = await context.Request.Body.ReadAsync(buffer, 0, buffer.Length, context.Request.CallCancelled)) != 0)
-                            {
                             //    counter += count;
-                             //   Trace.TraceInformation("{0}: {1}/{2}", id, counter, request.ContentLength);
-                                context.Request.CallCancelled.ThrowIfCancellationRequested();
+                            //   Trace.TraceInformation("{0}: {1}/{2}", id, counter, request.ContentLength);
+                            context.Request.CallCancelled.ThrowIfCancellationRequested();
 
-                                await stream.WriteAsync(buffer, 0, count, context.Request.CallCancelled);
-                            }
-                            await stream.FlushAsync();
-                            
-
-                            //Trace.TraceInformation("{2} - Done: {0}/{1}", counter, request.ContentLength,id);
-
-
+                            await stream.WriteAsync(buffer, 0, count, context.Request.CallCancelled);
                         }
-                        catch (Exception ex)
-                        {
-                            Logger.ErrorException("Copy streams: ", ex);
-                            throw;
-                       }
+                        await stream.FlushAsync();
+
+
+                        //Trace.TraceInformation("{2} - Done: {0}/{1}", counter, request.ContentLength,id);
+
+
                     }
-               // }
-               // catch (Exception ex)
-               //{
-               //     Trace.TraceInformation("{3} - Outer: {0}/{1} , {2}", counter, request.ContentLength, ex,id);
-               //    throw;
-               //}
+                    catch (Exception ex)
+                    {
+                        Logger.ErrorException("Copy streams: ", ex);
+                        throw;
+                    }
+                }
+                // }
+                // catch (Exception ex)
+                //{
+                //     Trace.TraceInformation("{3} - Outer: {0}/{1} , {2}", counter, request.ContentLength, ex,id);
+                //    throw;
+                //}
             }
         }
 
