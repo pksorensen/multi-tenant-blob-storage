@@ -54,7 +54,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension
             context.Response.StatusCode = 200;
             context.Response.ContentType = "application/json";
 
-            using (var writer = new JsonTextWriter(new StreamWriter(context.Response.Body)))
+            var writer = new JsonTextWriter(new StreamWriter(context.Response.Body));
             {
 
                 new JObject(
