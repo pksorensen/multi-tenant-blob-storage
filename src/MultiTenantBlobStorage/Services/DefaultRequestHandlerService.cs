@@ -548,7 +548,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
                 else if (resourceContext.Action == Constants.Actions.ListBlobs)
                 {
 
-                    await WriteXmlAsync(stream, context.Response.Body, null, Options.ListBlobOptions, "Blob", "BlobPrefix");
+                    await WriteXmlAsync(stream, context.Response.Body, null, Options.ListBlobOptions, state,"Blob", "BlobPrefix");
                     return;
                 }
                
