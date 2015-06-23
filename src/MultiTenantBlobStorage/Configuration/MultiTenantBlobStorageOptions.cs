@@ -1,4 +1,5 @@
-﻿using Microsoft.WindowsAzure.Storage;
+﻿using Microsoft.Owin;
+using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using SInnovations.Azure.MultiTenantBlobStorage.Logging;
 using SInnovations.Azure.MultiTenantBlobStorage.Notifications;
@@ -30,7 +31,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Configuration
         public Func<XElement, object, bool> BlobListFilter { get; set; }
 
         public Func<object, IEnumerable<XElement>> BlobListFilterFinalizer { get; set; }
-        public Func<object> StateInitializer { get; set; }
+        public Func<IOwinRequest,object> StateInitializer { get; set; }
 
     }
     public class ListBlobOptions : ListOptions
