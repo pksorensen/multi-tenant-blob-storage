@@ -32,16 +32,24 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Services.D
             RevokeTokens = new List<String>();
         }
         protected IEnumerable<String> RevokeTokens { get; set; }
-        public override Task<bool> BlobStorageResponseAuthorizedAsync(IOwinContext context, ResourceContext resourceContext, System.Net.HttpWebResponse response)
+        public override async Task<bool> BlobStorageResponseAuthorizedAsync(IOwinContext context, ResourceContext resourceContext, System.Net.HttpWebResponse response)
         {
 
             if (RevokeTokens.Any())
             {
                 var tokens = response.GetResponseHeader("x-ms-meta-token");
-                return Task.FromResult(RevokeTokens.All(t => tokens.IndexOf(t) > -1));
+                var missing = RevokeTokens.Where(t => tokens.IndexOf(t) == -1).ToArray();
+                if (!missing.Any())
+                    return true;
+
+                var present = await GetTokenIdsAsync(resourceContext.Route.TenantId, resourceContext.Route.Purpose, resourceContext.Route.Resource,null);
+                return present != null && missing.All(t => present.Contains(t));
+
+
+                //return Task.FromResult(RevokeTokens.All(t => tokens.IndexOf(t) > -1));
             }
                 
-            return base.BlobStorageResponseAuthorizedAsync(context,resourceContext,response);
+            return await base.BlobStorageResponseAuthorizedAsync(context,resourceContext,response);
         }
         public override async Task<bool> SkipAuthorizationManagerAsync(OwinContext context, ResourceContext resourceContext)
         {
@@ -75,8 +83,9 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Services.D
                  var tokenids = claims.Where(t => t.Type == "token").ToArray();
                  if (tokenids.Any())
                  {
-                     var tokens = await GetTokenIdsAsync(tenant,purpose,resource, prefix);
-                     RevokeTokens = tokenids.Where(t => tokens.IndexOf(t.Value) == -1).Select(t => t.Value).ToArray();
+                     RevokeTokens = tokenids.Select(c => c.Value).ToArray();
+                   //  var tokens = await GetTokenIdsAsync(tenant,purpose,resource, prefix);
+                   //  RevokeTokens = tokenids.Where(t => tokens.IndexOf(t.Value) == -1).Select(t => t.Value).ToArray();
 
                  }
                  return flag;

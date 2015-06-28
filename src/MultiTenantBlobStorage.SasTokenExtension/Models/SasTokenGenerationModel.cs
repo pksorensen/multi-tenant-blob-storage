@@ -6,6 +6,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using SInnovations.Azure.MultiTenantBlobStorage.Extensions;
+using Microsoft.WindowsAzure.Storage.Blob;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Models
 {
@@ -27,6 +28,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Models
         }
         //public DateTimeOffset? Expires { get; set; }
         public List<Claim> Claims { get; set; }
+
+        public CloudBlockBlob Blob { get; set; }
     }
 
     public static class SasTokenGenerationModelExtensions

@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using SInnovations.Azure.MultiTenantBlobStorage.Extensions;
 using SInnovations.Azure.MultiTenantBlobStorage.SasTokenExtension.Models;
 using SInnovations.Azure.MultiTenantBlobStorage.Logging;
+using Microsoft.WindowsAzure.Storage.Blob;
 
 namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
 {
@@ -21,7 +22,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
         public string Primary { get; set; }
         public string Secondary { get; set; }
     }
-    
+
     public class SharedAccessTokenService : ISharedAccessTokenService
     {
         private readonly ILog Logger = LogProvider.GetCurrentClassLogger();
@@ -30,7 +31,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
         private readonly ITenantContainerNameService _containers;
         private readonly Lazy<Task<KeyPair>> _keyProvider;
 
-        public SharedAccessTokenService(IStorageAccountResolverService storage, ITenantContainerNameService containers,Func<Task<KeyPair>> keysProvider)
+        public SharedAccessTokenService(IStorageAccountResolverService storage, ITenantContainerNameService containers, Func<Task<KeyPair>> keysProvider)
         {
             _storage = storage;
             _containers = containers;
@@ -39,9 +40,9 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
 
         public SasTokenGenerationModel GetModel(IOwinRequest request)
         {
-         
-            
-            string[] expires,noexpire;
+
+
+            string[] expires, noexpire;
             DateTimeOffset? expire =
                 request.Headers.TryGetValue("x-ms-token-exp", out expires) && expires.Length == 1 ?
                     DateTimeOffset.Parse(expires[0], CultureInfo.InvariantCulture) : DateTimeOffset.UtcNow.AddHours(4);
@@ -51,7 +52,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
             var claims = new List<Claim>();
 
             var tokenIds = request.Headers.GetValues("x-ms-token");
-            if (tokenIds!=null && tokenIds.Any())
+            if (tokenIds != null && tokenIds.Any())
             {
                 claims.AddRange(tokenIds.Select(t => new Claim("token", t)));
             }
@@ -82,7 +83,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
 
             }
             Logger.InfoFormat("Creating SasTokenGenerationModel: uri={0}, claims={1}", context.Request.Uri, string.Join(", ", model.Claims.Select(c => c.Type)));
-          
+
             return Task.FromResult(model);
         }
         public virtual async Task<IEnumerable<Claim>> CheckSignatureAsync(string token)
@@ -106,7 +107,7 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
                 return claims;
 
             return Enumerable.Empty<Claim>();
-           
+
         }
 
         private static string GetBase64Value(string part)
@@ -136,37 +137,41 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services.Default
 
             }
         }
+
         public virtual async Task<string> GetTokenAsync(SasTokenGenerationModel model)
         {
 
             if (model.Claims.Any(c => c.Type == "token"))
             {
-                var tenant =model.Claims.FindFirstOrEmptyValue("tenant");
+                var tenant = model.Claims.FindFirstOrEmptyValue("tenant");
                 var resource = model.Claims.FindFirstOrEmptyValue("resource");
                 var path = model.Claims.FindFirstOrEmptyValue("prefix");
                 var purpose = model.Claims.FindFirstOrEmptyValue("purpose");
-
-                var account = await _storage.GetStorageAccountAsync(tenant,purpose);
-                var container = account.CreateCloudBlobClient()
-                    .GetContainerReference(await _containers.GetContainerNameAsync(tenant, purpose, resource));
-                
 
                 var tokens = model.Claims.Where(k => k.Type == "token").Select(t => t.Value).ToList();
 
                 if (path.IsPresent())
                 {
-                    var blob = container.GetBlockBlobReference(path);
+                    var blob = model.Blob;
+                    if (blob == null)
+                    {
+                        var account = await _storage.GetStorageAccountAsync(tenant, purpose);
+                        var container = account.CreateCloudBlobClient()
+                            .GetContainerReference(await _containers.GetContainerNameAsync(tenant, purpose, resource));
+                        blob = container.GetBlockBlobReference(path);
+                    }
 
-                    await blob.FetchAttributesAsync();
-                    if (blob.Metadata.ContainsKey("token"))
-                        tokens.AddRange(blob.Metadata["token"].Split(','));
+                    await blob.LoadTokensAsync(tokens);
+                    await blob.SaveTokensAsync(tokens);
+                  
 
-                    blob.Metadata["token"] = string.Join(",", tokens);
-
-                    await blob.SetMetadataAsync();
                 }
                 else
                 {
+                    var account = await _storage.GetStorageAccountAsync(tenant, purpose);
+                    var container = account.CreateCloudBlobClient()
+                        .GetContainerReference(await _containers.GetContainerNameAsync(tenant, purpose, resource));
+
                     await container.FetchAttributesAsync();
                     if (container.Metadata.ContainsKey("token"))
                         tokens.AddRange(container.Metadata["token"].Split(','));
