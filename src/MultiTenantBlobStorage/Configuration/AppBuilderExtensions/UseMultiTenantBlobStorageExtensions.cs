@@ -43,7 +43,7 @@ namespace Owin
             var container = app.UseUnityContainer();
 
             var fact = options.Factory ?? new MultiTenantBlobStorageServiceFactory();
-
+            container.RegisterType<IDependencyResolver, UnityDependencyResolver>(new HierarchicalLifetimeManager(), new InjectionFactory((c) => new UnityDependencyResolver(c)) );
             container.RegisterDefaultType<ITenantContainerNameService, DefaultTenantContainerNameService>(fact.TenantContainerNameService);
             container.RegisterDefaultType<IStorageAccountResolverService, DefaultStorageAccountResolverService>(fact.StorageAccountResolver);
             container.RegisterDefaultType<IResourceAuthorizationManager, DefaultResourceAuthorizationManager>(fact.AuthorizationManager);
