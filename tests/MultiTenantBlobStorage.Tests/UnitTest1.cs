@@ -60,7 +60,7 @@ namespace MultiTenantBlobStorage.Tests
                 if (!string.IsNullOrEmpty(captureValue))
                 {
                     var range = captureValue.Substring(6);
-                    var rangeParts = range.Split('-');
+                    var rangeParts = range.Split('-').Where(s=>!string.IsNullOrEmpty(s)).ToArray();
                     if (rangeParts.Length == 1)
                     {
                         var a = long.Parse(rangeParts[0]);
