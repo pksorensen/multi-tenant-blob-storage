@@ -11,6 +11,7 @@ using System.Xml;
 using System.IO;
 using SInnovations.Azure.MultiTenantBlobStorage.Services;
 using SInnovations.Azure.MultiTenantBlobStorage.Configuration;
+using System.Text.RegularExpressions;
 
 namespace MultiTenantBlobStorage.Tests
 {
@@ -46,7 +47,34 @@ namespace MultiTenantBlobStorage.Tests
 
         
         }
+        static Regex _rangeregex = new Regex(@"^bytes=\d*-\d*(,\d*-\d*)*$", RegexOptions.Compiled);
+        [TestMethod]
+        public async Task TestRangeHeader()
+        {
+            var value = "bytes=0-";
+            var matches = _rangeregex.Match(value);
 
+            foreach (Capture capture in matches.Captures)
+            {
+                var captureValue = capture.Value;
+                if (!string.IsNullOrEmpty(captureValue))
+                {
+                    var range = captureValue.Substring(6);
+                    var rangeParts = range.Split('-');
+                    if (rangeParts.Length == 1)
+                    {
+                        var a = long.Parse(rangeParts[0]);
+                    }
+                    else if (rangeParts.Length == 2)
+                    {
+                      var b = long.Parse(rangeParts[0]);
+                      var c = long.Parse(rangeParts[1]);
+                    }
+
+                }
+
+            }
+        }
         [TestMethod]
         public async Task TestXmlCopy()
         {

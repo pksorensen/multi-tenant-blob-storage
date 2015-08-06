@@ -75,7 +75,8 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Extensions
                             var captureValue = capture.Value;
                             if(captureValue.IsPresent()){
                                 var range = captureValue.Substring(6);
-                                var rangeParts = range.Split('-');
+                                var rangeParts = range.Split('-')
+                                    .Where(StringExtensions.IsPresent).ToArray();
                                 if(rangeParts.Length==1)
                                 {
                                     request.AddRange(long.Parse(rangeParts[0]));

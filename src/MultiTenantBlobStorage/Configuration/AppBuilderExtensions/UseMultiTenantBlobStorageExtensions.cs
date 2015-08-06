@@ -50,6 +50,7 @@ namespace Owin
             container.RegisterDefaultType<IAuthenticationService, DefaultAuthenticationService>(fact.AuthenticationService);
             container.RegisterDefaultType<IRequestTenantResolver, DefaultRequestTenantResolver>(fact.RequestTenantResolver); 
 
+
             foreach (var registration in fact.Registrations)
                 container.Register(registration);
 
