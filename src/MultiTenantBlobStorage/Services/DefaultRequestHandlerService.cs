@@ -161,10 +161,13 @@ namespace SInnovations.Azure.MultiTenantBlobStorage.Services
 
             }
 
-            if (!req.Headers.ContainsKey("x-ms-version"))
+            // Fix header
+            if (req.Headers.ContainsKey("x-ms-version"))
             {
-                request.Headers.Add("x-ms-version: 2014-02-14");
+                 request.Headers.Remove("x-ms-version");
             }
+            request.Headers.Add("x-ms-version: 2015-02-21");
+          
             if (!req.Headers.ContainsKey("x-ms-date"))
             {
                 request.Headers.Add("x-ms-date: " + DateTime.UtcNow.ToString("R", CultureInfo.InvariantCulture));
